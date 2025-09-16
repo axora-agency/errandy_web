@@ -19,6 +19,14 @@ interface OnboardingState {
   // derived helpers
   selectedServicesArray: string[];
   selectedServicesCount: number;
+  // address selection
+  selectedAddress: {
+    placeId: string;
+    address: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  } | null;
+  setSelectedAddress: (a: { placeId: string; address: string; latitude?: number | null; longitude?: number | null } | null) => void;
 }
 
 export const useOnBoardingStore = create<OnboardingState>()((set) => ({
@@ -36,6 +44,10 @@ export const useOnBoardingStore = create<OnboardingState>()((set) => ({
 
   pendingRole: null,
   setPendingRole: (r) => set({ pendingRole: r }),
+
+  // address
+  selectedAddress: null,
+  setSelectedAddress: (a) => set({ selectedAddress: a }),
 
   // derived
   selectedServicesArray: [],

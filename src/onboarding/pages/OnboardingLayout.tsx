@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useMutation } from "@apollo/client";
 import { CREATE_USER_ROLE } from "@/graphql/mutations/user/create-user-role";
 import { ADD_WORKER_SERVICES } from "@/graphql/mutations/user/add-worker-services";
+import { ADD_USER_ADDRESS } from "@/graphql/mutations/user/add-user-address";
 import { useUserStore } from "@/store/userStore";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ export default function OnboardingLayout() {
   const location = useLocation();
   const { selectedServicesArray } = useOnBoardingStore();
   const { pendingRole } = useOnBoardingStore();
+  const { selectedAddress } = useOnBoardingStore();
   const setUser = useUserStore((s) => s.setUser);
 
   const [mutateCreateRole] = useMutation(CREATE_USER_ROLE, {
@@ -29,6 +31,19 @@ export default function OnboardingLayout() {
     {
       onCompleted(data) {
         if (data?.addWorkerServices) setUser(data.addWorkerServices);
+      },
+    }
+  );
+
+  const [mutateAddAddress, { loading: addressSubmitting }] = useMutation(
+    ADD_USER_ADDRESS,
+    {
+      onCompleted(data) {
+        if (data?.addUserAddress) setUser(data.addUserAddress);
+      },
+      onError(err) {
+        console.error("add address error", err);
+        toast.error("Failed to save address");
       },
     }
   );
@@ -123,6 +138,32 @@ export default function OnboardingLayout() {
           .catch((err) => {
             console.error("submitServices error", err);
           });
+        return;
+      }
+
+      if (steps[currentStep] === "/onboarding/address") {
+        if (!selectedAddress) {
+          toast.error("Please select an address to continue");
+          return;
+        }
+
+        if (addressSubmitting) return;
+
+        const dto: any = {
+          placeId: selectedAddress.placeId,
+          address: selectedAddress.address,
+          latitude: selectedAddress.latitude,
+          longitude: selectedAddress.longitude,
+        };
+
+        mutateAddAddress({ variables: { dto } })
+          .then((res) => {
+            if (res) navigate(nextPath);
+          })
+          .catch((err) => {
+            console.error("mutateAddAddress error", err);
+          });
+
         return;
       }
       navigate(nextPath);
