@@ -1,0 +1,122 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+/* ===========================================
+   1. Theme Variables (Colors, Spacing, Fonts)
+   =========================================== */
+@theme {
+  /* Colors - base gray */
+  --tw-gray-100: #F9F9F9;
+  --tw-gray-200: #F1F1F4;
+  --tw-gray-300: #DBDFE9;
+  --tw-gray-400: #C4CADA;
+  --tw-gray-500: #99A1B7;
+  --tw-gray-600: #78829D;
+  --tw-gray-700: #4B5675;
+  --tw-gray-800: #252F4A;
+  --tw-gray-900: #071437;
+
+  /* Colors - contextual (light & dark) */
+  --tw-brand: #FF6F1E;
+  --tw-brand-active: #F15700;
+  --tw-brand-light: #FFF5EF;
+  --tw-brand-clarity: rgba(255,111,30,0.20);
+  --tw-brand-inverse: #fff;
+
+  --tw-primary: #1B84FF;
+  --tw-primary-active: #056EE9;
+  --tw-primary-light: #EFF6FF;
+  --tw-primary-clarity: rgba(27,132,255,0.20);
+  --tw-primary-inverse: #fff;
+
+  --tw-success: #17C653;
+  --tw-success-active: #04B440;
+  --tw-success-light: #EAFFF1;
+  --tw-success-clarity: rgba(23,198,83,0.20);
+  --tw-success-inverse: #fff;
+
+  --tw-info: #7239EA;
+  --tw-info-active: #5014D0;
+  --tw-info-light: #F8F5FF;
+  --tw-info-clarity: rgba(114,57,234,0.20);
+  --tw-info-inverse: #fff;
+
+  --tw-danger: #F8285A;
+  --tw-danger-active: #D81A48;
+  --tw-danger-light: #FFEEF3;
+  --tw-danger-clarity: rgba(248,40,90,0.20);
+  --tw-danger-inverse: #fff;
+
+  --tw-warning: #F6B100;
+  --tw-warning-active: #DFA000;
+  --tw-warning-light: #FFF8DD;
+  --tw-warning-clarity: rgba(246,177,0,0.20);
+  --tw-warning-inverse: #fff;
+
+  --tw-dark: #1E2129;
+  --tw-dark-active: #111318;
+  --tw-dark-light: #F9F9F9;
+  --tw-dark-clarity: rgba(30,33,41,0.20);
+  --tw-dark-inverse: #fff;
+
+  --tw-light: #fff;
+  --tw-light-active: #FCFCFC;
+  --tw-light-light: #fff;
+  --tw-light-clarity: rgba(255,255,255,0.20);
+  --tw-light-inverse: #4B5675;
+
+  --tw-secondary: #F9F9F9;
+  --tw-secondary-active: #F9F9F9;
+  --tw-secondary-light: #F9F9F9;
+  --tw-secondary-clarity: rgba(249,249,249,0.20);
+  --tw-secondary-inverse: #4B5675;
+
+  /* Fonts */
+  --font-sans: Inter, system-ui, sans-serif;
+
+  /* Box Shadows */
+  --tw-card-box-shadow: 0px 4px 12px rgba(0,0,0,0.09);
+  --tw-default-box-shadow: 0px 4px 12px rgba(0,0,0,0.09);
+  --tw-light-box-shadow: 0px 3px 4px rgba(0,0,0,0.03);
+  --tw-primary-box-shadow: 0px 4px 12px rgba(40,132,239,0.35);
+  --tw-success-box-shadow: 0px 4px 12px rgba(53,189,100,0.35);
+  --tw-danger-box-shadow: 0px 4px 12px rgba(241,65,108,0.35);
+  --tw-info-box-shadow: 0px 4px 12px rgba(114,57,234,0.35);
+  --tw-warning-box-shadow: 0px 4px 12px rgba(246,192,0,0.35);
+  --tw-dark-box-shadow: 0px 4px 12px rgba(37,47,74,0.35);
+
+  /* Keyframes */
+  --keyframes-accordion-down: {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  --keyframes-accordion-up: {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+  --keyframes-collapsible-down: {
+    from { height: 0; }
+    to { height: var(--radix-collapsible-content-height); }
+  }
+  --keyframes-collapsible-up: {
+    from { height: var(--radix-collapsible-content-height); }
+    to { height: 0; }
+  }
+
+  /* Animations */
+  --animation-accordion-down: accordion-down 0.2s ease-out;
+  --animation-accordion-up: accordion-up 0.2s ease-out;
+  --animation-collapsible-down: collapsible-down 0.2s ease-out;
+  --animation-collapsible-up: collapsible-up 0.2s ease-out;
+}
+
+/* ===========================================
+   3. Layout Tokens (Sidebar & Header sizes)
+   =========================================== */
+@theme {
+  --sidebar-width-desktop: 280px;
+  --sidebar-width-desktop-collapse: 80px;
+  --sidebar-width-mobile: 280px;
+  --header-height-desktop: 70px;
+  --header-height-mobile: 60px;
+}
