@@ -2,11 +2,13 @@ import { useUserStore } from "@/store/userStore";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { useServiceSelection } from "@/hooks";
 
 export default function OnboardingLayout() {
   const { user } = useUserStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const { submitRole } = useServiceSelection();
 
   // 👇 Define your dynamic steps
   const role = user?.activeRole;
@@ -28,7 +30,17 @@ export default function OnboardingLayout() {
 
   const goNext = () => {
     if (currentStep < steps.length - 1) {
-      navigate(steps[currentStep + 1]);
+      // If we're on the first step (role selection) and user is a worker flow,
+      // submit the selected role before navigating.
+      const nextPath = steps[currentStep + 1];
+      if (steps[currentStep] === "/onboarding/role") {
+        // call submitRole; navigate after it resolves (ignore errors and still navigate)
+        submitRole()
+          ?.then(() => navigate(nextPath))
+          .catch(() => navigate(nextPath));
+        return;
+      }
+      navigate(nextPath);
     }
   };
 
@@ -80,10 +92,7 @@ export default function OnboardingLayout() {
           >
             Prev
           </Button>
-          <Button
-            onClick={goNext}
-            disabled={currentStep === steps.length - 1}
-          >
+          <Button onClick={goNext} disabled={currentStep === steps.length - 1}>
             Next
           </Button>
         </div>

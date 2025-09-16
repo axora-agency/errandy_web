@@ -14,14 +14,14 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
-    "\n  query GetProfessions {\n    professions {\n      name\n      services\n    }\n  }\n": typeof types.GetProfessionsDocument,
-    "\n  query GetServices {\n    services {\n      name\n      services\n    }\n  }\n": typeof types.GetServicesDocument,
-    "\n  query GetUser {\n    user {\n      id\n      name\n      email\n      username\n      emailVerified\n      displayUsername\n      activeRole\n      image\n      phoneNumber\n      roles\n    }\n  }\n": typeof types.GetUserDocument,
+    "\n  mutation CreateUserRole($role: String!) {\n    createUserRole(role: $role) {\n      username\n      updatedAt\n      twoFactorEnabled\n      phoneNumberVerified\n      phoneNumber\n      name\n      image\n      id\n      emailVerified\n      email\n      displayUsername\n      createdAt\n      country\n      activeRole\n      activeAddressId\n    }\n  }\n": typeof types.CreateUserRoleDocument,
+    "\n  query ServiceCategories($input: GetServiceCategoriesInput) {\n    serviceCategories(input: $input) {\n      services {\n        name\n        type\n        id\n        categoryId\n      }\n      name\n      type\n    }\n  }\n": typeof types.ServiceCategoriesDocument,
+    "\n  query User {\n    user {\n      activeAddressId\n      activeRole\n      country\n      createdAt\n      displayUsername\n      email\n      emailVerified\n      id\n      image\n      name\n      phoneNumber\n      phoneNumberVerified\n      twoFactorEnabled\n      updatedAt\n      username\n    }\n  }\n": typeof types.UserDocument,
 };
 const documents: Documents = {
-    "\n  query GetProfessions {\n    professions {\n      name\n      services\n    }\n  }\n": types.GetProfessionsDocument,
-    "\n  query GetServices {\n    services {\n      name\n      services\n    }\n  }\n": types.GetServicesDocument,
-    "\n  query GetUser {\n    user {\n      id\n      name\n      email\n      username\n      emailVerified\n      displayUsername\n      activeRole\n      image\n      phoneNumber\n      roles\n    }\n  }\n": types.GetUserDocument,
+    "\n  mutation CreateUserRole($role: String!) {\n    createUserRole(role: $role) {\n      username\n      updatedAt\n      twoFactorEnabled\n      phoneNumberVerified\n      phoneNumber\n      name\n      image\n      id\n      emailVerified\n      email\n      displayUsername\n      createdAt\n      country\n      activeRole\n      activeAddressId\n    }\n  }\n": types.CreateUserRoleDocument,
+    "\n  query ServiceCategories($input: GetServiceCategoriesInput) {\n    serviceCategories(input: $input) {\n      services {\n        name\n        type\n        id\n        categoryId\n      }\n      name\n      type\n    }\n  }\n": types.ServiceCategoriesDocument,
+    "\n  query User {\n    user {\n      activeAddressId\n      activeRole\n      country\n      createdAt\n      displayUsername\n      email\n      emailVerified\n      id\n      image\n      name\n      phoneNumber\n      phoneNumberVerified\n      twoFactorEnabled\n      updatedAt\n      username\n    }\n  }\n": types.UserDocument,
 };
 
 /**
@@ -41,15 +41,15 @@ export function gql(source: string): unknown;
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "\n  query GetProfessions {\n    professions {\n      name\n      services\n    }\n  }\n"): (typeof documents)["\n  query GetProfessions {\n    professions {\n      name\n      services\n    }\n  }\n"];
+export function gql(source: "\n  mutation CreateUserRole($role: String!) {\n    createUserRole(role: $role) {\n      username\n      updatedAt\n      twoFactorEnabled\n      phoneNumberVerified\n      phoneNumber\n      name\n      image\n      id\n      emailVerified\n      email\n      displayUsername\n      createdAt\n      country\n      activeRole\n      activeAddressId\n    }\n  }\n"): (typeof documents)["\n  mutation CreateUserRole($role: String!) {\n    createUserRole(role: $role) {\n      username\n      updatedAt\n      twoFactorEnabled\n      phoneNumberVerified\n      phoneNumber\n      name\n      image\n      id\n      emailVerified\n      email\n      displayUsername\n      createdAt\n      country\n      activeRole\n      activeAddressId\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "\n  query GetServices {\n    services {\n      name\n      services\n    }\n  }\n"): (typeof documents)["\n  query GetServices {\n    services {\n      name\n      services\n    }\n  }\n"];
+export function gql(source: "\n  query ServiceCategories($input: GetServiceCategoriesInput) {\n    serviceCategories(input: $input) {\n      services {\n        name\n        type\n        id\n        categoryId\n      }\n      name\n      type\n    }\n  }\n"): (typeof documents)["\n  query ServiceCategories($input: GetServiceCategoriesInput) {\n    serviceCategories(input: $input) {\n      services {\n        name\n        type\n        id\n        categoryId\n      }\n      name\n      type\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "\n  query GetUser {\n    user {\n      id\n      name\n      email\n      username\n      emailVerified\n      displayUsername\n      activeRole\n      image\n      phoneNumber\n      roles\n    }\n  }\n"): (typeof documents)["\n  query GetUser {\n    user {\n      id\n      name\n      email\n      username\n      emailVerified\n      displayUsername\n      activeRole\n      image\n      phoneNumber\n      roles\n    }\n  }\n"];
+export function gql(source: "\n  query User {\n    user {\n      activeAddressId\n      activeRole\n      country\n      createdAt\n      displayUsername\n      email\n      emailVerified\n      id\n      image\n      name\n      phoneNumber\n      phoneNumberVerified\n      twoFactorEnabled\n      updatedAt\n      username\n    }\n  }\n"): (typeof documents)["\n  query User {\n    user {\n      activeAddressId\n      activeRole\n      country\n      createdAt\n      displayUsername\n      email\n      emailVerified\n      id\n      image\n      name\n      phoneNumber\n      phoneNumberVerified\n      twoFactorEnabled\n      updatedAt\n      username\n    }\n  }\n"];
 
 export function gql(source: string) {
   return (documents as any)[source] ?? {};

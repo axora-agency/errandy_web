@@ -1,27 +1,39 @@
-import { useState } from 'react';
-import { User, Briefcase, CheckCircle2 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import type { UserRole } from '@/gql/graphql';
+import { useState } from "react";
+import { User, Briefcase, CheckCircle2, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import type { UserRole } from "@/gql/graphql";
+import { useServiceSelection } from "@/hooks";
 
 export default function Roles() {
   const [selected, setSelected] = useState<UserRole | null>(null);
+  const { setSelectedRole, submitting } = useServiceSelection();
 
   const handleSelect = (role: UserRole) => {
     setSelected(role);
+    // store in hook; submission happens on Next
+    setSelectedRole(role);
   };
 
   const baseClasses =
-    'relative rounded-2xl border bg-white/50 backdrop-blur p-6 shadow-md overflow-hidden cursor-pointer transition-all';
-  const selectedClasses = 'ring-2 ring-offset-2 ring-blue-500 scale-[1.02]';
+    "relative rounded-2xl border bg-white/50 backdrop-blur p-6 shadow-md overflow-hidden cursor-pointer transition-all";
+  const selectedClasses = "ring-2 ring-offset-2 ring-blue-500 scale-[1.02]";
 
   return (
-    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+    <div className="relative max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+      {submitting && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        </div>
+      )}
+
       {/* Client Card */}
       <motion.article
         layout
         whileHover={{ scale: 1.02 }}
-        onClick={() => handleSelect('CLIENT')}
-        className={`${baseClasses} ${selected === 'CLIENT' ? selectedClasses : ''}`}
+        onClick={() => handleSelect("CLIENT")}
+        className={`${baseClasses} ${
+          selected === "CLIENT" ? selectedClasses : ""
+        }`}
         aria-label="Client account card"
       >
         {/* Decorative 3D-ish SVG */}
@@ -39,7 +51,12 @@ export default function Roles() {
                 <stop offset="100%" stopColor="#7c3aed" stopOpacity="0.9" />
               </linearGradient>
               <filter id="fClient" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="8" stdDeviation="18" floodOpacity="0.15" />
+                <feDropShadow
+                  dx="0"
+                  dy="8"
+                  stdDeviation="18"
+                  floodOpacity="0.15"
+                />
               </filter>
             </defs>
 
@@ -72,11 +89,14 @@ export default function Roles() {
           <div>
             <h3 className="text-lg font-semibold flex items-center gap-2">
               I want to hire (Client)
-              {selected === 'CLIENT' && <CheckCircle2 className="w-5 h-5 text-blue-500" />}
+              {selected === "CLIENT" && (
+                <CheckCircle2 className="w-5 h-5 text-blue-500" />
+              )}
             </h3>
             <p className="mt-1 text-sm text-slate-600">
-              Post jobs, manage applicants and hire the best workers for your projects. Ideal if you want to find
-              service providers quickly and securely.
+              Post jobs, manage applicants and hire the best workers for your
+              projects. Ideal if you want to find service providers quickly and
+              securely.
             </p>
           </div>
         </div>
@@ -86,8 +106,10 @@ export default function Roles() {
       <motion.article
         layout
         whileHover={{ scale: 1.02 }}
-        onClick={() => handleSelect('WORKER')}
-        className={`${baseClasses} ${selected === 'WORKER' ? selectedClasses : ''}`}
+        onClick={() => handleSelect("WORKER")}
+        className={`${baseClasses} ${
+          selected === "WORKER" ? selectedClasses : ""
+        }`}
         aria-label="Worker account card"
       >
         <div className="absolute -left-8 -bottom-8 opacity-90 pointer-events-none">
@@ -104,7 +126,12 @@ export default function Roles() {
                 <stop offset="80%" stopColor="#059669" stopOpacity="0.5" />
               </linearGradient>
               <filter id="fWorker" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="8" stdDeviation="18" floodOpacity="0.12" />
+                <feDropShadow
+                  dx="0"
+                  dy="8"
+                  stdDeviation="18"
+                  floodOpacity="0.12"
+                />
               </filter>
             </defs>
 
@@ -131,11 +158,13 @@ export default function Roles() {
           <div>
             <h3 className="text-lg font-semibold flex items-center gap-2">
               I want to work (Worker)
-              {selected === 'WORKER' && <CheckCircle2 className="w-5 h-5 text-green-600" />}
+              {selected === "WORKER" && (
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+              )}
             </h3>
             <p className="mt-1 text-sm text-slate-600">
-              Create your worker profile, showcase your skills and apply to jobs. Best if you want to offer services and
-              build a client base.
+              Create your worker profile, showcase your skills and apply to
+              jobs. Best if you want to offer services and build a client base.
             </p>
           </div>
         </div>

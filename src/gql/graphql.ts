@@ -58,11 +58,6 @@ export type CreateReviewInput = {
   exampleField: Scalars['Int']['input'];
 };
 
-export type CreateServiceInput = {
-  /** Example field (placeholder) */
-  exampleField: Scalars['Int']['input'];
-};
-
 export type CreateWalletInput = {
   /** Example field (placeholder) */
   exampleField: Scalars['Int']['input'];
@@ -104,6 +99,10 @@ export type GetAllErrandInput = {
   status?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type GetServiceCategoriesInput = {
+  type?: InputMaybe<ServiceCategoryType>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   addAddress: User;
@@ -111,20 +110,17 @@ export type Mutation = {
   createChat: Chat;
   createErrand: Errand;
   createReview: Review;
-  createService: Service;
   createUserRole: User;
   createWallet: Wallet;
   removeApplication: Application;
   removeChat: Chat;
   removeErrand: Errand;
   removeReview: Review;
-  removeService: Service;
   removeWallet: Wallet;
   updateApplication: Application;
   updateChat: Chat;
   updateErrand: Errand;
   updateReview: Review;
-  updateService: Service;
   updateUser: User;
   updateWallet: Wallet;
 };
@@ -152,11 +148,6 @@ export type MutationCreateErrandArgs = {
 
 export type MutationCreateReviewArgs = {
   createReviewInput: CreateReviewInput;
-};
-
-
-export type MutationCreateServiceArgs = {
-  createServiceInput: CreateServiceInput;
 };
 
 
@@ -190,11 +181,6 @@ export type MutationRemoveReviewArgs = {
 };
 
 
-export type MutationRemoveServiceArgs = {
-  id: Scalars['Int']['input'];
-};
-
-
 export type MutationRemoveWalletArgs = {
   id: Scalars['Int']['input'];
 };
@@ -220,11 +206,6 @@ export type MutationUpdateReviewArgs = {
 };
 
 
-export type MutationUpdateServiceArgs = {
-  updateServiceInput: UpdateServiceInput;
-};
-
-
 export type MutationUpdateUserArgs = {
   updateUserInput: UpdateUserInput;
 };
@@ -244,10 +225,10 @@ export type Query = {
   chat: Chat;
   errand: Errand;
   errands: Array<Errand>;
-  professions: Array<ServiceGroup>;
   review: Review;
   service: Service;
-  services: Array<ServiceGroup>;
+  serviceCategories: Array<ServiceCategory>;
+  services: Array<Service>;
   user: User;
   wallet: Wallet;
 };
@@ -279,7 +260,17 @@ export type QueryReviewArgs = {
 
 
 export type QueryServiceArgs = {
-  id: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryServiceCategoriesArgs = {
+  input?: InputMaybe<GetServiceCategoriesInput>;
+};
+
+
+export type QueryServicesArgs = {
+  categoryType?: InputMaybe<ServiceCategoryType>;
 };
 
 
@@ -300,15 +291,24 @@ export type Review = {
 
 export type Service = {
   __typename?: 'Service';
-  /** Example field (placeholder) */
-  exampleField: Scalars['Int']['output'];
+  category?: Maybe<ServiceCategory>;
+  categoryId: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  type: ServiceCategoryType;
 };
 
-export type ServiceGroup = {
-  __typename?: 'ServiceGroup';
+export type ServiceCategory = {
+  __typename?: 'ServiceCategory';
+  id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
-  services: Array<Scalars['String']['output']>;
+  services?: Maybe<Array<Service>>;
+  type: ServiceCategoryType;
 };
+
+export type ServiceCategoryType =
+  | 'CASUAL'
+  | 'PROFESSIONAL';
 
 export type UpdateApplicationInput = {
   /** Example field (placeholder) */
@@ -348,12 +348,6 @@ export type UpdateReviewInput = {
   id: Scalars['Int']['input'];
 };
 
-export type UpdateServiceInput = {
-  /** Example field (placeholder) */
-  exampleField?: InputMaybe<Scalars['Int']['input']>;
-  id: Scalars['Int']['input'];
-};
-
 export type UpdateUserInput = {
   displayUsername?: InputMaybe<Scalars['String']['input']>;
   /** Example field (placeholder) */
@@ -374,17 +368,19 @@ export type UpdateWalletInput = {
 
 export type User = {
   __typename?: 'User';
-  activeAddressId?: Maybe<Scalars['String']['output']>;
+  activeAddressId?: Maybe<Scalars['ID']['output']>;
   activeRole?: Maybe<UserRole>;
+  country?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   displayUsername?: Maybe<Scalars['String']['output']>;
   email: Scalars['String']['output'];
-  emailVerified?: Maybe<Scalars['Boolean']['output']>;
+  emailVerified: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   image?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   phoneNumber?: Maybe<Scalars['String']['output']>;
-  roles?: Maybe<Array<UserRole>>;
+  phoneNumberVerified?: Maybe<Scalars['Boolean']['output']>;
+  twoFactorEnabled?: Maybe<Scalars['Boolean']['output']>;
   updatedAt: Scalars['DateTime']['output'];
   username?: Maybe<Scalars['String']['output']>;
 };
@@ -403,22 +399,26 @@ export type WorkerType =
   | 'GENERAL'
   | 'PROFESSIONAL';
 
-export type GetProfessionsQueryVariables = Exact<{ [key: string]: never; }>;
+export type CreateUserRoleMutationVariables = Exact<{
+  role: Scalars['String']['input'];
+}>;
 
 
-export type GetProfessionsQuery = { __typename?: 'Query', professions: Array<{ __typename?: 'ServiceGroup', name: string, services: Array<string> }> };
+export type CreateUserRoleMutation = { __typename?: 'Mutation', createUserRole: { __typename?: 'User', username?: string | null, updatedAt: any, twoFactorEnabled?: boolean | null, phoneNumberVerified?: boolean | null, phoneNumber?: string | null, name: string, image?: string | null, id: string, emailVerified: boolean, email: string, displayUsername?: string | null, createdAt: any, country?: string | null, activeRole?: UserRole | null, activeAddressId?: string | null } };
 
-export type GetServicesQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetServicesQuery = { __typename?: 'Query', services: Array<{ __typename?: 'ServiceGroup', name: string, services: Array<string> }> };
-
-export type GetUserQueryVariables = Exact<{ [key: string]: never; }>;
+export type ServiceCategoriesQueryVariables = Exact<{
+  input?: InputMaybe<GetServiceCategoriesInput>;
+}>;
 
 
-export type GetUserQuery = { __typename?: 'Query', user: { __typename?: 'User', id: string, name: string, email: string, username?: string | null, emailVerified?: boolean | null, displayUsername?: string | null, activeRole?: UserRole | null, image?: string | null, phoneNumber?: string | null, roles?: Array<UserRole> | null } };
+export type ServiceCategoriesQuery = { __typename?: 'Query', serviceCategories: Array<{ __typename?: 'ServiceCategory', name: string, type: ServiceCategoryType, services?: Array<{ __typename?: 'Service', name: string, type: ServiceCategoryType, id: string, categoryId: string }> | null }> };
+
+export type UserQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export const GetProfessionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetProfessions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"professions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"services"}}]}}]}}]} as unknown as DocumentNode<GetProfessionsQuery, GetProfessionsQueryVariables>;
-export const GetServicesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetServices"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"services"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"services"}}]}}]}}]} as unknown as DocumentNode<GetServicesQuery, GetServicesQueryVariables>;
-export const GetUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUser"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerified"}},{"kind":"Field","name":{"kind":"Name","value":"displayUsername"}},{"kind":"Field","name":{"kind":"Name","value":"activeRole"}},{"kind":"Field","name":{"kind":"Name","value":"image"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"roles"}}]}}]}}]} as unknown as DocumentNode<GetUserQuery, GetUserQueryVariables>;
+export type UserQuery = { __typename?: 'Query', user: { __typename?: 'User', activeAddressId?: string | null, activeRole?: UserRole | null, country?: string | null, createdAt: any, displayUsername?: string | null, email: string, emailVerified: boolean, id: string, image?: string | null, name: string, phoneNumber?: string | null, phoneNumberVerified?: boolean | null, twoFactorEnabled?: boolean | null, updatedAt: any, username?: string | null } };
+
+
+export const CreateUserRoleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateUserRole"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"role"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createUserRole"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"role"},"value":{"kind":"Variable","name":{"kind":"Name","value":"role"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"twoFactorEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumberVerified"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"image"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerified"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"displayUsername"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"country"}},{"kind":"Field","name":{"kind":"Name","value":"activeRole"}},{"kind":"Field","name":{"kind":"Name","value":"activeAddressId"}}]}}]}}]} as unknown as DocumentNode<CreateUserRoleMutation, CreateUserRoleMutationVariables>;
+export const ServiceCategoriesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ServiceCategories"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"GetServiceCategoriesInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"serviceCategories"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"services"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"categoryId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}}]} as unknown as DocumentNode<ServiceCategoriesQuery, ServiceCategoriesQueryVariables>;
+export const UserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"User"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activeAddressId"}},{"kind":"Field","name":{"kind":"Name","value":"activeRole"}},{"kind":"Field","name":{"kind":"Name","value":"country"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"displayUsername"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerified"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"image"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumberVerified"}},{"kind":"Field","name":{"kind":"Name","value":"twoFactorEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"username"}}]}}]}}]} as unknown as DocumentNode<UserQuery, UserQueryVariables>;
