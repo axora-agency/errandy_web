@@ -3,12 +3,14 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useServiceSelection } from "@/hooks";
+import { toast } from 'sonner';
 
 export default function OnboardingLayout() {
   const { user } = useUserStore();
   const navigate = useNavigate();
   const location = useLocation();
   const { submitRole } = useServiceSelection();
+  const { pendingRole } = useUserStore();
 
   // 👇 Define your dynamic steps
   const role = user?.activeRole;
@@ -34,10 +36,17 @@ export default function OnboardingLayout() {
       // submit the selected role before navigating.
       const nextPath = steps[currentStep + 1];
       if (steps[currentStep] === "/onboarding/role") {
-        // call submitRole; navigate after it resolves (ignore errors and still navigate)
-        submitRole()
-          ?.then(() => navigate(nextPath))
-          .catch(() => navigate(nextPath));
+        if (!pendingRole) {
+          // nothing selected, don't navigate forward
+          toast.error('Please select a role to continue');
+          return;
+        }
+        submitRole(pendingRole)
+          .then(() => navigate(nextPath))
+          .catch((err) => {
+            // submitRole already shows a toast, but ensure we don't navigate
+            console.error('submitRole error', err);
+          });
         return;
       }
       navigate(nextPath);

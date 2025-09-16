@@ -3,15 +3,17 @@ import { User, Briefcase, CheckCircle2, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { UserRole } from "@/gql/graphql";
 import { useServiceSelection } from "@/hooks";
+import { useUserStore } from "@/store/userStore";
 
 export default function Roles() {
   const [selected, setSelected] = useState<UserRole | null>(null);
-  const { setSelectedRole, submitting } = useServiceSelection();
+  const { setPendingRole } = useUserStore();
+  const { submitting } = useServiceSelection();
 
   const handleSelect = (role: UserRole) => {
     setSelected(role);
-    // store in hook; submission happens on Next
-    setSelectedRole(role);
+    // store pending role in user store; submission happens on Next
+    setPendingRole(role);
   };
 
   const baseClasses =
