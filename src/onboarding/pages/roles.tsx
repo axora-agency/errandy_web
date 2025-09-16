@@ -2,13 +2,29 @@ import { useState } from "react";
 import { User, Briefcase, CheckCircle2, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { UserRole } from "@/gql/graphql";
-import { useServiceSelection } from "@/hooks";
+import { useOnBoardingStore } from "@/store/onBoardingStore";
+import { useMutation } from "@apollo/client";
+import { CREATE_USER_ROLE } from "@/graphql/mutations/user/create-user-role";
 import { useUserStore } from "@/store/userStore";
 
 export default function Roles() {
   const [selected, setSelected] = useState<UserRole | null>(null);
-  const { setPendingRole } = useUserStore();
-  const { submitting } = useServiceSelection();
+  const { setPendingRole } = useOnBoardingStore();
+  const setUser = useUserStore((s) => s.setUser);
+
+  const [mutateCreateRole, { loading: submitting }] = useMutation(
+    CREATE_USER_ROLE,
+    {
+      onCompleted(data) {
+        if (data?.createUserRole) {
+          setUser(data.createUserRole);
+        }
+      },
+      onError() {
+        // error handling via toast elsewhere if needed
+      },
+    }
+  );
 
   const handleSelect = (role: UserRole) => {
     setSelected(role);

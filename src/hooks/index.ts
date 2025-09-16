@@ -5,4 +5,4 @@ export * from './useResponsive';
 export * from './useScrollPosition';
 export * from './useViewport';
 export * from './useBodyClasses';
-export * from './useServiceSelection';
+// useServiceSelection has been removed; onboarding state now lives in `useOnBoardingStore`

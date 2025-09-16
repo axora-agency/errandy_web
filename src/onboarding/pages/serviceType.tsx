@@ -11,7 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { GET_SERVICES } from "@/graphql";
-import { useServiceSelection, ServiceCategoryType } from "@/hooks";
+import { useOnBoardingStore } from "@/store/onBoardingStore";
+
+const ServiceCategoryType = {
+  CASUAL: "CASUAL",
+  PROFESSIONAL: "PROFESSIONAL",
+} as const;
+type ServiceCategoryType = (typeof ServiceCategoryType)[keyof typeof ServiceCategoryType];
 import type {
   ServiceCategoriesQuery,
   ServiceCategoriesQueryVariables,
@@ -20,12 +26,17 @@ import type {
 export default function ServiceType() {
   const {
     selectedCategory,
-    handleCategorySelect,
-    handleServiceToggle,
-    isServiceSelected,
+    setSelectedCategory,
+    toggleService,
+    selectedServices,
     selectedServicesArray,
     selectedServicesCount,
-  } = useServiceSelection();
+  } = useOnBoardingStore();
+
+  const isServiceSelected = (id?: string) => Boolean(id && selectedServices?.[id]);
+
+
+  // No local mutation here; OnboardingLayout will perform submit via store or inline mutation
 
   // Query for getting services based on category
   const {
@@ -33,11 +44,11 @@ export default function ServiceType() {
     loading: servicesLoading,
     refetch,
   } = useQuery<ServiceCategoriesQuery, ServiceCategoriesQueryVariables>(
-    GET_SERVICES,
+  GET_SERVICES,
     {
       variables: {
         input: {
-          type: selectedCategory || undefined,
+      type: (selectedCategory as any) || undefined,
         },
       },
       skip: !selectedCategory,
@@ -49,16 +60,15 @@ export default function ServiceType() {
     if (selectedCategory) {
       refetch({
         input: {
-          type: selectedCategory,
+          type: selectedCategory as any,
         },
       });
     }
   }, [selectedCategory, refetch]);
 
   // Filter services based on selected category
-  const getServicesForCategory = (category: ServiceCategoryType) => {
+  const getServicesForCategory = (category: string | undefined) => {
     if (!servicesData?.serviceCategories) return [];
-
     return servicesData.serviceCategories.filter(
       (serviceCategory) => serviceCategory.type === category
     );
@@ -90,7 +100,7 @@ export default function ServiceType() {
         <motion.div
           layout
           whileHover={{ scale: 1.02 }}
-          onClick={() => handleCategorySelect(ServiceCategoryType.CASUAL)}
+          onClick={() => setSelectedCategory(ServiceCategoryType.CASUAL)}
           className={`cursor-pointer transition-all ${
             selectedCategory === ServiceCategoryType.CASUAL
               ? "ring-2 ring-offset-2 ring-primary scale-[1.02]"
@@ -132,7 +142,7 @@ export default function ServiceType() {
         <motion.div
           layout
           whileHover={{ scale: 1.02 }}
-          onClick={() => handleCategorySelect(ServiceCategoryType.PROFESSIONAL)}
+          onClick={() => setSelectedCategory(ServiceCategoryType.PROFESSIONAL)}
           className={`cursor-pointer transition-all ${
             selectedCategory === ServiceCategoryType.PROFESSIONAL
               ? "ring-2 ring-offset-2 ring-primary scale-[1.02]"
@@ -198,33 +208,19 @@ export default function ServiceType() {
               (serviceGroup, groupIndex) => (
                 <Card key={groupIndex}>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">
-                      {serviceGroup.name}
-                    </CardTitle>
+                    <CardTitle className="text-lg">{serviceGroup.name}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {serviceGroup.services?.map((service) => (
-                        <motion.div
-                          key={service?.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
+                        <motion.div key={service?.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                           <Button
-                            variant={
-                              isServiceSelected(service?.id || "")
-                                ? "default"
-                                : "outline"
-                            }
+                            variant={isServiceSelected(service?.id || "") ? "default" : "outline"}
                             className="w-full justify-start h-auto p-3 text-left"
-                            onClick={() =>
-                              handleServiceToggle(service?.id || "")
-                            }
+                            onClick={() => toggleService(service?.id || "")}
                           >
                             <div className="flex items-center gap-2">
-                              {isServiceSelected(service?.id || "") && (
-                                <CheckCircle2 className="w-4 h-4 text-white" />
-                              )}
+                              {isServiceSelected(service?.id || "") && <CheckCircle2 className="w-4 h-4 text-white" />}
                               <span className="truncate">{service?.name}</span>
                             </div>
                           </Button>
@@ -239,16 +235,10 @@ export default function ServiceType() {
 
           {/* Summary */}
           {selectedServicesArray.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-6"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">
-                    Selected Services Summary
-                  </CardTitle>
+                  <CardTitle className="text-lg">Selected Services Summary</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -256,27 +246,15 @@ export default function ServiceType() {
                       <strong>Category:</strong> {selectedCategory}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      <strong>
-                        Services ({selectedServicesArray.length}):
-                      </strong>
+                      <strong>Services ({selectedServicesArray.length}):</strong>
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {selectedServicesArray.map((serviceId, index) => {
-                        // Find the service name from the data
-                        const allServices =
-                          servicesData?.serviceCategories?.flatMap(
-                            (cat) => cat.services
-                          ) || [];
-                        const service = allServices.find(
-                          (service) => service?.id === serviceId
-                        );
+                        const allServices = servicesData?.serviceCategories?.flatMap((cat) => cat.services) || [];
+                        const service = allServices.find((service) => service?.id === serviceId);
                         const serviceName = service?.name || serviceId;
-
                         return (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
-                          >
+                          <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                             {serviceName}
                           </span>
                         );

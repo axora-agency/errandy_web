@@ -5,17 +5,35 @@ const RequireOnboarding = () => {
   const location = useLocation();
   const { user } = useUserStore();
 
-  // if user has role, allow
-  if (user?.activeRole) {
+  // If user is a client, they are considered onboarded once role is set
+  if (user?.activeRole === "CLIENT") {
     return <Outlet />;
   }
 
-  // if already on onboarding, allow
-  if (location.pathname === "/onboarding") {
-    return <Outlet />;
+  // If user is a worker, check onboardingProgress and redirect to the correct step
+  if (user?.activeRole === "WORKER") {
+    const progress = user.onboardingProgress;
+    // If completed, allow into app
+    if (progress === "COMPLETED") return <Outlet />;
+
+    // Map progress to route
+    const routeForProgress = () => {
+      if (!progress || progress === "NONE") return "/onboarding/role";
+      if (progress === "ROLE_SELECTED") {
+        // role already selected — send worker to services selection next
+        return "/onboarding/services";
+      }
+      if (progress === "SERVICES_SELECTED" || progress === "ADDRESS_ADDED") return "/onboarding/services";
+      return "/onboarding/role";
+    };
+
+    const target = routeForProgress();
+    if (location.pathname.startsWith("/onboarding")) return <Outlet />;
+    return <Navigate to={target} state={{ from: location }} replace />;
   }
 
-  // otherwise, redirect
+  // if no role / unknown, redirect to role selection
+  if (location.pathname.startsWith("/onboarding")) return <Outlet />;
   return <Navigate to="/onboarding/role" state={{ from: location }} replace />;
 };
 

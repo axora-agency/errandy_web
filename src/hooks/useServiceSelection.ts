@@ -1,21 +1,4 @@
-import { useState, useCallback } from "react";
-import { useMutation } from "@apollo/client";
-import { toast } from "sonner";
-import { CREATE_USER_ROLE } from "@/graphql/mutations/user/create-user-role";
-import { useUserStore } from "@/store/userStore";
-import type {
-  CreateUserRoleMutation,
-  CreateUserRoleMutationVariables,
-  UserRole,
-} from "@/gql/graphql";
-
-export const ServiceCategoryType = {
-  CASUAL: "CASUAL",
-  PROFESSIONAL: "PROFESSIONAL",
-} as const;
-
-export type ServiceCategoryType =
-  (typeof ServiceCategoryType)[keyof typeof ServiceCategoryType];
+// removed
 
 interface SelectedServices {
   [key: string]: boolean;
@@ -36,16 +19,24 @@ export interface UseServiceSelectionReturn {
   setSelectedRole: (role: UserRole | null) => void;
   submitRole: (role?: UserRole) => Promise<any>;
   submitting: boolean;
+  // services mutation
+  submitServices: (dto: any) => Promise<any>;
+  servicesSubmitting: boolean;
 }
 
 export const useServiceSelection = (): UseServiceSelectionReturn => {
-  const [selectedCategory, setSelectedCategory] =
-    useState<ServiceCategoryType | null>(null);
-  const [selectedServices, setSelectedServices] = useState<SelectedServices>(
-    {}
-  );
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const setUser = useUserStore((s) => s.setUser);
+  const {
+    selectedCategory,
+    selectedServices,
+    setSelectedCategory,
+    toggleService,
+    resetSelection,
+    pendingRole,
+    setPendingRole,
+    selectedServicesArray,
+    selectedServicesCount,
+  } = useOnBoardingStore();
 
   const [mutateCreateRole, { loading: submitting }] = useMutation<
     CreateUserRoleMutation,
@@ -65,26 +56,38 @@ export const useServiceSelection = (): UseServiceSelectionReturn => {
     },
   });
 
+  const [mutateAddServices, { loading: servicesSubmitting }] = useMutation(
+    ADD_WORKER_SERVICES,
+    {
+      onCompleted(data) {
+        if (data?.addWorkerServices) {
+          try {
+            setUser(data.addWorkerServices);
+          } catch (e) {
+            // ignore
+          }
+        }
+      },
+      onError(err) {
+        toast.error(err?.message || "Failed to add services");
+      },
+    }
+  );
+
   const handleCategorySelect = useCallback((category: ServiceCategoryType) => {
-    setSelectedCategory(category);
-    setSelectedServices({}); // Reset selected services when category changes
-  }, []);
+    setSelectedCategory(category as any);
+  }, [setSelectedCategory]);
 
-  const handleServiceToggle = useCallback((serviceName: string) => {
-    setSelectedServices((prev) => ({
-      ...prev,
-      [serviceName]: !prev[serviceName],
-    }));
-  }, []);
+  const handleServiceToggle = useCallback(
+    (serviceName: string) => toggleService(serviceName),
+    [toggleService]
+  );
 
-  const resetSelection = useCallback(() => {
-    setSelectedCategory(null);
-    setSelectedServices({});
-  }, []);
+  // resetSelection comes from store
 
   const submitRole = useCallback(
     async (role?: UserRole) => {
-      const roleToSubmit = role ?? selectedRole;
+      const roleToSubmit = role ?? pendingRole;
       if (!roleToSubmit) return Promise.reject(new Error("No role selected"));
       try {
         const resp = await mutateCreateRole({
@@ -96,35 +99,48 @@ export const useServiceSelection = (): UseServiceSelectionReturn => {
         throw e;
       }
     },
-    [mutateCreateRole, selectedRole]
+    [mutateCreateRole, pendingRole]
+  );
+
+  const submitServices = useCallback(
+    async (dto: any) => {
+      try {
+        const resp = await mutateAddServices({ variables: { dto } });
+        return resp;
+      } catch (e: any) {
+        toast.error(e?.message || "Failed to add services");
+        throw e;
+      }
+    },
+    [mutateAddServices]
   );
 
   const isServiceSelected = useCallback(
     (serviceName: string) => {
-      return Boolean(selectedServices[serviceName]);
+      return Boolean(selectedServices?.[serviceName]);
     },
     [selectedServices]
   );
-
-  const selectedServicesArray = Object.keys(selectedServices).filter(
-    (service) => selectedServices[service]
-  );
-  const selectedServicesCount = selectedServicesArray.length;
+  // selectedServicesArray and count come from store
 
   return {
-    selectedCategory,
+    selectedCategory: selectedCategory as ServiceCategoryType | null,
     selectedServices,
     selectedServicesArray,
-    setSelectedCategory,
+    setSelectedCategory: (c: ServiceCategoryType | null) =>
+      setSelectedCategory(c as any),
     handleCategorySelect,
     handleServiceToggle,
     resetSelection,
     isServiceSelected,
     selectedServicesCount,
     // onboarding role helpers
-    selectedRole,
-    setSelectedRole,
+    selectedRole: pendingRole,
+    setSelectedRole: (r: UserRole | null) => setPendingRole(r),
     submitRole,
     submitting,
+    // services
+    submitServices,
+    servicesSubmitting,
   };
 };
