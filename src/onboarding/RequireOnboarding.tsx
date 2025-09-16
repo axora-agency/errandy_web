@@ -23,7 +23,8 @@ const RequireOnboarding = () => {
         // role already selected — send worker to services selection next
         return "/onboarding/services";
       }
-      if (progress === "SERVICES_SELECTED" || progress === "ADDRESS_ADDED") return "/onboarding/services";
+      if (progress === "SERVICES_SELECTED") return "/onboarding/address";
+      if (progress === "ADDRESS_ADDED") return "/onboarding/completed";
       return "/onboarding/role";
     };
 
@@ -36,6 +37,5 @@ const RequireOnboarding = () => {
   if (location.pathname.startsWith("/onboarding")) return <Outlet />;
   return <Navigate to="/onboarding/role" state={{ from: location }} replace />;
 };
-
 
 export { RequireOnboarding };

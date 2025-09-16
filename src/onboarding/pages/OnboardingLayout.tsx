@@ -24,14 +24,18 @@ export default function OnboardingLayout() {
     onError() {},
   });
 
-  const [mutateAddServices, { loading: servicesSubmitting }] = useMutation(ADD_WORKER_SERVICES, {
-    onCompleted(data) {
-      if (data?.addWorkerServices) setUser(data.addWorkerServices);
-    },
-  });
+  const [mutateAddServices, { loading: servicesSubmitting }] = useMutation(
+    ADD_WORKER_SERVICES,
+    {
+      onCompleted(data) {
+        if (data?.addWorkerServices) setUser(data.addWorkerServices);
+      },
+    }
+  );
 
   const submitRole = (role: any) => mutateCreateRole({ variables: { role } });
-  const submitServices = (dto: any) => mutateAddServices({ variables: { dto } });
+  const submitServices = (dto: any) =>
+    mutateAddServices({ variables: { dto } });
 
   // 👇 Define your dynamic steps based on role + onboarding progress
   const role = user?.activeRole;
@@ -41,7 +45,12 @@ export default function OnboardingLayout() {
     if (role === "CLIENT") return ["/onboarding/role"];
 
     // Worker flow: always show full step sequence but we'll derive current index from progress
-    return ["/onboarding/role", "/onboarding/services", "/onboarding/skills", "/onboarding/summary"];
+    return [
+      "/onboarding/role",
+      "/onboarding/services",
+      "/onboarding/address",
+      "/onboarding/completed",
+    ];
   }, [role]);
 
   // Find current step index
@@ -127,52 +136,54 @@ export default function OnboardingLayout() {
   };
 
   return (
-    <div className="p-5 flex flex-col min-h-screen">
-      {/* Top Navigation */}
-      <nav className="flex items-center justify-between border-b pb-3 mb-5">
-        <div className="font-bold text-lg">MyApp</div>
-        <div className="flex items-center gap-3">
-          {user && (
-            <span className="text-sm text-gray-600">Hi, {user.name}</span>
-          )}
-          <Button
-            // onClick={logout}
-            variant={"destructive"}
-          >
-            Logout
-          </Button>
+    <div className="min-h-screen flex flex-col">
+      {/* Fixed Header */}
+      <header className="w-full fixed top-0 left-0 z-40 bg-white/80 backdrop-blur border-b">
+        <div className="max-w-5xl mx-auto p-4 flex items-center justify-between">
+          <div className="font-bold text-lg">MyApp</div>
+          <div className="flex items-center gap-3">
+            {user && (
+              <span className="text-sm text-gray-600">Hi, {user.name}</span>
+            )}
+            <Button variant={"destructive"}>Logout</Button>
+          </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Main content */}
-      <div className="flex-1">
-        <Outlet />
-      </div>
-
-      {/* Bottom Progress + Navigation */}
-      <div className="mt-6 pt-4">
-        {/* Single line progress bar */}
-        <div className="w-full h-1 bg-gray-200 rounded mb-4">
-          <div
-            className="h-1 bg-primary rounded transition-all duration-300"
-            style={{ width: `${progressPercent}%` }}
-          />
+      {/* Scrollable main area (leave space for header and footer) */}
+      <main className="flex-1 overflow-auto pt-20 pb-36">
+        <div className="max-w-5xl mx-auto px-5">
+          <Outlet />
         </div>
+      </main>
 
-        {/* Prev / Next buttons */}
-        <div className="flex justify-between">
-          <Button
-            onClick={goPrev}
-            variant={"secondary"}
-            disabled={currentStep === 0}
-          >
-            Prev
-          </Button>
-          <Button onClick={goNext} disabled={currentStep === steps.length - 1}>
-            Next
-          </Button>
+      {/* Fixed Footer / Progress */}
+      <footer className="w-full fixed bottom-0 left-0 z-40 bg-white/90 border-t">
+        <div className="max-w-5xl mx-auto p-4">
+          <div className="w-full h-1 bg-gray-200 rounded mb-4">
+            <div
+              className="h-1 bg-primary rounded transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          <div className="flex justify-between">
+            <Button
+              onClick={goPrev}
+              variant={"secondary"}
+              disabled={currentStep === 0}
+            >
+              Prev
+            </Button>
+            <Button
+              onClick={goNext}
+              disabled={currentStep === steps.length - 1}
+            >
+              Next
+            </Button>
+          </div>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
