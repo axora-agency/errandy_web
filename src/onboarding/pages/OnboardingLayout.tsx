@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useServiceSelection } from "@/hooks";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 export default function OnboardingLayout() {
   const { user } = useUserStore();
@@ -38,14 +38,18 @@ export default function OnboardingLayout() {
       if (steps[currentStep] === "/onboarding/role") {
         if (!pendingRole) {
           // nothing selected, don't navigate forward
-          toast.error('Please select a role to continue');
+          toast.error("Please select a role to continue");
           return;
         }
         submitRole(pendingRole)
-          .then(() => navigate(nextPath))
+          .then((data) => {
+            if (data) {
+              navigate(nextPath);
+            }
+          })
           .catch((err) => {
             // submitRole already shows a toast, but ensure we don't navigate
-            console.error('submitRole error', err);
+            console.error("submitRole error", err);
           });
         return;
       }

@@ -18,6 +18,7 @@ export const CREATE_USER_ROLE = gql`
       country
       activeRole
       activeAddressId
+      onboardingProgress
     }
   }
 `;
