@@ -6,8 +6,11 @@ import DashboardPage from "@/pages/dashboard/DashboardPage";
 import { MainLayout } from "@/layouts/mainLayout";
 import { OnboardingPage } from "@/onboarding/OnboardingPage";
 import { RequireOnboarding } from "@/onboarding/RequireOnboarding";
+import { useUserStore } from "@/store/userStore";
 
 const AppRoutingSetup = () => {
+  const { user } = useUserStore();
+  const role = user?.activeRole;
   return (
     <Routes>
       {/* Protected routes */}
@@ -15,8 +18,19 @@ const AppRoutingSetup = () => {
         <Route>
           <Route element={<RequireOnboarding />}>
             <Route element={<MainLayout />}>
-              <Route path="/" element={<Navigate to="recuiter/dashboard" />} />
-              <Route path="/recuiter/*">
+              <Route
+                path="/"
+                element={
+                  <Navigate
+                    to={
+                      role === "CLIENT"
+                        ? "/client/dashboard"
+                        : "/workers/find-work"
+                    }
+                  />
+                }
+              />
+              <Route path="/client/*">
                 <Route path="dashboard" element={<DashboardPage />} />
               </Route>
             </Route>
