@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const ADD_USER_ADDRESS = gql`
-  mutation AddUserAddress($dto: AddUserAddressInput!) {
-    addUserAddress(dto: $dto) {
+  mutation SaveUserAddress($dto: SaveUserAddressInput!) {
+    saveUserAddress(dto: $dto) {
       activeAddressId
       activeRole
       country

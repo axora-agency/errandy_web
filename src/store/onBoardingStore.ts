@@ -21,12 +21,12 @@ interface OnboardingState {
   selectedServicesCount: number;
   // address selection
   selectedAddress: {
-    placeId: string;
     address: string;
+    label?: string;
     latitude?: number | null;
     longitude?: number | null;
   } | null;
-  setSelectedAddress: (a: { placeId: string; address: string; latitude?: number | null; longitude?: number | null } | null) => void;
+  setSelectedAddress: (a: { address: string; label?: string; latitude?: number | null; longitude?: number | null } | null) => void;
 }
 
 export const useOnBoardingStore = create<OnboardingState>()((set) => ({

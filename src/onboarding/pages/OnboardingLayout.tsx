@@ -9,6 +9,11 @@ import { ADD_WORKER_SERVICES } from "@/graphql/mutations/user/add-worker-service
 import { ADD_USER_ADDRESS } from "@/graphql/mutations/user/add-user-address";
 import { useUserStore } from "@/store/userStore";
 import { toast } from "sonner";
+import type {
+  SaveUserAddressInput,
+  SaveUserAddressMutation,
+  SaveUserAddressMutationVariables,
+} from "@/gql/graphql";
 
 export default function OnboardingLayout() {
   const { user } = useUserStore();
@@ -35,18 +40,18 @@ export default function OnboardingLayout() {
     }
   );
 
-  const [mutateAddAddress, { loading: addressSubmitting }] = useMutation(
-    ADD_USER_ADDRESS,
-    {
-      onCompleted(data) {
-        if (data?.addUserAddress) setUser(data.addUserAddress);
-      },
-      onError(err) {
-        console.error("add address error", err);
-        toast.error("Failed to save address");
-      },
-    }
-  );
+  const [mutateAddAddress, { loading: addressSubmitting }] = useMutation<
+    SaveUserAddressMutation,
+    SaveUserAddressMutationVariables
+  >(ADD_USER_ADDRESS, {
+    onCompleted(data) {
+      if (data?.saveUserAddress) setUser(data.saveUserAddress);
+    },
+    onError(err) {
+      console.error("add address error", err);
+      toast.error("Failed to save address");
+    },
+  });
 
   const submitRole = (role: any) => mutateCreateRole({ variables: { role } });
   const submitServices = (dto: any) =>
@@ -110,7 +115,7 @@ export default function OnboardingLayout() {
         }
         submitRole(pendingRole)
           .then((data) => {
-            if (data) {
+            if (data.data) {
               navigate(nextPath);
             }
           })
@@ -133,7 +138,7 @@ export default function OnboardingLayout() {
 
         submitServices({ serviceIds: selectedServicesArray })
           .then((res) => {
-            if (res) navigate(nextPath);
+            if (res.data) navigate(nextPath);
           })
           .catch((err) => {
             console.error("submitServices error", err);
@@ -149,16 +154,16 @@ export default function OnboardingLayout() {
 
         if (addressSubmitting) return;
 
-        const dto: any = {
-          placeId: selectedAddress.placeId,
+        const dto: SaveUserAddressInput = {
+          label: selectedAddress.label || "",
           address: selectedAddress.address,
-          latitude: selectedAddress.latitude,
-          longitude: selectedAddress.longitude,
+          latitude: selectedAddress.latitude as number,
+          longitude: selectedAddress.longitude as number,
         };
 
         mutateAddAddress({ variables: { dto } })
           .then((res) => {
-            if (res) navigate(nextPath);
+            if (res.data) navigate(nextPath);
           })
           .catch((err) => {
             console.error("mutateAddAddress error", err);
