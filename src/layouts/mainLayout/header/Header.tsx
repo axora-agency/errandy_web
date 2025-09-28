@@ -4,16 +4,6 @@ import { MegaMenu } from "../mega-menu";
 import { HeaderLogo, HeaderTopbar } from "./";
 
 const Header = () => {
-  // const { headerSticky } = useDemo1Layout();
-  // const { pathname } = useLocation();
-
-  // useEffect(() => {
-  //   if (headerSticky) {
-  //     document.body.setAttribute('data-sticky-header', 'on');
-  //   } else {
-  //     document.body.removeAttribute('data-sticky-header');
-  //   }
-  // }, [headerSticky]);
 
   return (
     <header
@@ -21,12 +11,12 @@ const Header = () => {
         "header  z-10 start-0 end-0 flex items-stretch shrink-0 py-3 bg-background"
       )}
     >
-      <Container className="flex items-center lg:gap-4 w-full">
+      <Container className="flex items-center lg:gap-4 w-full justify-between md:justify-normal">
         <HeaderLogo />
         {/* {pathname.includes('/account') ? <Breadcrumbs /> : <MegaMenu />} */}
         <MegaMenu />
 
-        <div className="ml-auto">
+        <div className="sm:flex hidden">
           <HeaderTopbar />
         </div>
       </Container>

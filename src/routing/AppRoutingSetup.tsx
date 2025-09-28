@@ -2,10 +2,11 @@ import { Navigate, Route, Routes } from "react-router";
 import { RequireAuth } from "@/auth/RequireAuth";
 import { ErrorsRouting } from "@/errors";
 import { AuthPage } from "@/auth/AuthPage";
-import DashboardPage from "@/pages/dashboard/DashboardPage";
 import { MainLayout } from "@/layouts/mainLayout";
 import { OnboardingPage } from "@/onboarding/OnboardingPage";
 import { RequireOnboarding } from "@/onboarding/RequireOnboarding";
+import { RequireClient, ClientPage } from "@/client";
+import { RequireWorker, WorkerPage } from "@/worker";
 import { useUserStore } from "@/store/userStore";
 
 const AppRoutingSetup = () => {
@@ -30,8 +31,11 @@ const AppRoutingSetup = () => {
                   />
                 }
               />
-              <Route path="/client/*">
-                <Route path="dashboard" element={<DashboardPage />} />
+              <Route element={<RequireClient />}>
+                <Route path="/client/*" element={<ClientPage />} />
+              </Route>
+              <Route element={<RequireWorker />}>
+                <Route path="/workers/*" element={<WorkerPage />} />
               </Route>
             </Route>
           </Route>

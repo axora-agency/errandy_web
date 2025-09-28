@@ -1,9 +1,16 @@
 import { useUserStore } from "@/store/userStore";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { ScreenLoader } from "@/components";
 
 const RequireOnboarding = () => {
   const location = useLocation();
   const { user } = useUserStore();
+  console.log("🔍 RequireOnboarding:", user);
+
+  // If user is null, show loading (RequireAuth should handle user loading)
+  if (user === null) {
+    return <ScreenLoader />;
+  }
 
   // If user is a client, they are considered onboarded once role is set
   if (user?.activeRole === "CLIENT") {
@@ -13,6 +20,13 @@ const RequireOnboarding = () => {
   // If user is a worker, check onboardingProgress and redirect to the correct step
   if (user?.activeRole === "WORKER") {
     const progress = user.onboardingProgress;
+
+    // If user is accessing worker routes, allow them through regardless of onboarding completion
+    // The individual worker pages can enforce their own onboarding requirements if needed
+    if (location.pathname.startsWith("/workers")) {
+      return <Outlet />;
+    }
+
     // If completed, allow into app
     if (progress === "COMPLETED") return <Outlet />;
 

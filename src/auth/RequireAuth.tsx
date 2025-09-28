@@ -1,5 +1,5 @@
 import { ScreenLoader } from "@/components";
-import type { GetUserQuery, GetUserQueryVariables, User } from "@/gql/graphql";
+import type { UserQuery, UserQueryVariables, User } from "@/gql/graphql";
 import { GET_USER } from "@/graphql";
 import { auth } from "@/lib/auth";
 import { useUserStore } from "@/store/userStore";
@@ -14,7 +14,7 @@ const RequireAuth = () => {
   const location = useLocation();
   const { setUser } = useUserStore();
 
-  const { data, loading } = useQuery<GetUserQuery, GetUserQueryVariables>(
+  const { data, loading } = useQuery<UserQuery, UserQueryVariables>(
     GET_USER,
     {
       skip: !Boolean(session?.session && session.user?.id),
