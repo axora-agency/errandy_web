@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, ChevronDown, Briefcase, Users, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUserStore } from '@/store/userStore';
 
 type SearchCategory = 'errands' | 'workers' | 'shops';
 
@@ -32,13 +33,131 @@ const searchOptions: SearchOption[] = [
   }
 ];
 
-const SearchBox = () => {
-  const [selectedCategory, setSelectedCategory] = useState<SearchCategory>('errands');
+// Reusable Search Component
+const SearchComponent = () => {
+  const { user } = useUserStore();
+
+  // Set default category based on user role - if user is a client, default to 'workers'
+  const getDefaultCategory = (): SearchCategory => {
+    if (user?.activeRole === 'CLIENT') {
+      return 'workers';
+    }
+    return 'errands'; // Default for workers or when no user
+  };
+
+  const [selectedCategory, setSelectedCategory] = useState<SearchCategory>(getDefaultCategory());
   const [searchQuery, setSearchQuery] = useState('');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+
+  // Update category when user role changes
+  useEffect(() => {
+    setSelectedCategory(getDefaultCategory());
+  }, [user?.activeRole]);
 
   const currentOption = searchOptions.find(option => option.value === selectedCategory)!;
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      console.log(`Searching for "${searchQuery}" in ${selectedCategory}`);
+      // TODO: Implement actual search functionality
+    }
+  };
+
+  const handleCategoryChange = (category: SearchCategory) => {
+    setSelectedCategory(category);
+    setIsCategoryDropdownOpen(false);
+    // Clear search query when changing category
+    setSearchQuery('');
+  };
+
+  return (
+    <form onSubmit={handleSearch} className="relative">
+      <div className="flex items-center bg-background border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+        {/* Category Selector */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+            className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 rounded-l-lg border-r border-border transition-colors"
+          >
+            <currentOption.icon className="size-4 text-muted-foreground" />
+            <span>{currentOption.label}</span>
+            <ChevronDown className={cn(
+              "size-3 text-muted-foreground transition-transform",
+              isCategoryDropdownOpen && "rotate-180"
+            )} />
+          </button>
+
+          {/* Category Dropdown Menu */}
+          {isCategoryDropdownOpen && (
+            <div className="absolute top-full left-0 mt-1 w-full min-w-[140px] bg-popover border border-border rounded-md shadow-lg z-50">
+              {searchOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleCategoryChange(option.value)}
+                  className={cn(
+                    "flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors first:rounded-t-md last:rounded-b-md",
+                    selectedCategory === option.value && "bg-muted text-primary font-medium"
+                  )}
+                >
+                  <option.icon className="size-4" />
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Search Input */}
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={currentOption.placeholder}
+            className="w-full px-4 py-3 text-sm bg-transparent border-0 outline-none placeholder:text-muted-foreground"
+          />
+        </div>
+      </div>
+
+      {/* Search Suggestions */}
+      {searchQuery && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-40 max-h-60 overflow-y-auto">
+          <div className="p-2">
+            <div className="text-xs text-muted-foreground px-2 py-1 font-medium">
+              Suggestions for "{searchQuery}"
+            </div>
+            {[
+              `${searchQuery} services`,
+              `${searchQuery} near me`,
+              `professional ${searchQuery}`,
+              `${searchQuery} help`
+            ].map((suggestion, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => {
+                  setSearchQuery(suggestion);
+                  handleSearch(new Event('submit') as any);
+                }}
+                className="flex items-center gap-2 w-full px-2 py-2 text-sm text-left hover:bg-muted rounded transition-colors"
+              >
+                <Search className="size-3 text-muted-foreground" />
+                <span>{suggestion}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </form>
+  );
+};
+
+const SearchBox = () => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -57,106 +176,33 @@ const SearchBox = () => {
     };
   }, [isDropdownOpen]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      console.log(`Searching for "${searchQuery}" in ${selectedCategory}`);
-      // TODO: Implement actual search functionality
-    }
-  };
-
-  const handleCategoryChange = (category: SearchCategory) => {
-    setSelectedCategory(category);
-    setIsDropdownOpen(false);
-    // Clear search query when changing category
-    setSearchQuery('');
-  };
-
   return (
-    <div className="flex-1 max-w-4xl mx-4">
-      <form onSubmit={handleSearch} className="relative">
-        <div className="flex items-center bg-background border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-          {/* Category Selector */}
-          <div className="relative" ref={dropdownRef}>
-            <button
-              type="button"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 rounded-l-lg border-r border-border transition-colors"
-            >
-              <currentOption.icon className="size-4 text-muted-foreground" />
-              <span>{currentOption.label}</span>
-              <ChevronDown className={cn(
-                "size-3 text-muted-foreground transition-transform",
-                isDropdownOpen && "rotate-180"
-              )} />
-            </button>
+    <div className="flex-1 max-w-4xl">
+      {/* Large screens: Show search component directly */}
+      <div className="hidden xl:block">
+        <SearchComponent />
+      </div>
 
-            {/* Dropdown Menu */}
-            {isDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1 w-full min-w-[140px] bg-popover border border-border rounded-md shadow-lg z-50">
-                {searchOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => handleCategoryChange(option.value)}
-                    className={cn(
-                      "flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors first:rounded-t-md last:rounded-b-md",
-                      selectedCategory === option.value && "bg-muted text-primary font-medium"
-                    )}
-                  >
-                    <option.icon className="size-4" />
-                    <span>{option.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+      {/* Small screens: Show search icon with dropdown */}
+      <div className="xl:hidden relative" ref={dropdownRef}>
+        <button
+          type="button"
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          className="flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
+          title="Search"
+        >
+          <Search className="size-4" />
+        </button>
 
-          {/* Search Input */}
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={currentOption.placeholder}
-              className="w-full px-4 py-3 text-sm bg-transparent border-0 outline-none placeholder:text-muted-foreground"
-            />
-          </div>
-
-
-        </div>
-
-        {/* Search Suggestions (Optional) */}
-        {searchQuery && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-40 max-h-60 overflow-y-auto">
+        {/* Mobile Dropdown with Search Component */}
+        {isDropdownOpen && (
+          <div className="absolute top-full right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 min-w-[350px]">
             <div className="p-2">
-              <div className="text-xs text-muted-foreground px-2 py-1 font-medium">
-                Suggestions for "{searchQuery}"
-              </div>
-              {/* Mock suggestions - replace with real data */}
-              {[
-                `${searchQuery} services`,
-                `${searchQuery} near me`,
-                `professional ${searchQuery}`,
-                `${searchQuery} help`
-              ].map((suggestion, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery(suggestion);
-                    handleSearch(new Event('submit') as any);
-                  }}
-                  className="flex items-center gap-2 w-full px-2 py-2 text-sm text-left hover:bg-muted rounded transition-colors"
-                >
-                  <Search className="size-3 text-muted-foreground" />
-                  <span>{suggestion}</span>
-                </button>
-              ))}
+              <SearchComponent />
             </div>
           </div>
         )}
-      </form>
+      </div>
     </div>
   );
 };

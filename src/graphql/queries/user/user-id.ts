@@ -19,6 +19,11 @@ export const GET_USER = gql`
       updatedAt
       username
       onboardingProgress
+      userAddress {
+        label
+        address
+        id
+      }
     }
   }
 `;
