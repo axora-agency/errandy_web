@@ -11,40 +11,95 @@ const baseCommon: MenuConfig = [
 
 export const clientHeaderNav: MenuConfig = [
   {
-    id: "home",
-    type: "link",
-    label: "Dashboard",
-    to: "/client/dashboard",
-  },
-  {
     id: "errands",
     type: "dropdown",
-    label: "Errands",
+    label: "Hire Workers",
     children: [
       {
-        id: "post",
-        type: "link",
-        label: "Post Errand",
-        to: "/client/errands/new",
+        id: "errandPostsSection",
+        type: "section",
+        label: "Manage Errands",
       },
       {
-        id: "browse",
+        id: "ErrandPosts",
+        type: "link",
+        label: "Errand Posts",
+        to: "/clients/job-posts",
+      },
+      {
+        id: "divider-1",
+        type: "divider",
+      },
+      {
+        id: "workers",
+        type: "section",
+        label: "Find Workers",
+      },
+      {
+        id: "postJob",
+        type: "link",
+        label: "Post an Errand",
+        to: "/clients/post-job",
+      },
+      {
+        id: "browseWorkers",
         type: "link",
         label: "Browse Workers",
-        to: "/client/browse",
+        to: "/clients/find-workers",
       },
       {
-        id: "my-errands",
+        id: "hiredWorkers",
+        type: "link",
+        label: "Hired Workers",
+        to: "/clients/hired-workers",
+      },
+      {
+        id: "savedWorkers",
+        type: "link",
+        label: "Saved Workers",
+        to: "/clients/saved-workers",
+      },
+    ],
+  },
+  {
+    id: "works",
+    type: "dropdown",
+    label: "Manage Errands",
+    children: [
+      {
+        id: "activeErrands",
+        type: "section",
+        label: "Active & Past Errands",
+      },
+      {
+        id: "myErrands",
         type: "link",
         label: "My Errands",
-        to: "/client/errands",
+        to: "/clients/errands",
       },
-      { id: "divider-1", type: "divider" },
+    ],
+  },
+  {
+    id: "report",
+    type: "dropdown",
+    label: "Reports",
+    children: [
       {
-        id: "settings",
+        id: "reportsSection",
+        type: "section",
+        label: "Reports",
+      },
+      {
+        id: "summary",
         type: "link",
-        label: "Settings",
-        to: "/client/settings",
+        label: "Summary",
+        to: "/clients/reports/summary",
+      },
+      {
+        id: "transactions",
+        type: "link",
+        label: "Transactions History",
+        to: "/clients/reports/transactions",
       },
     ],
   },

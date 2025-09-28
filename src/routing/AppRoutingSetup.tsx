@@ -8,6 +8,7 @@ import { RequireOnboarding } from "@/onboarding/RequireOnboarding";
 import { RequireClient, ClientPage } from "@/client";
 import { RequireWorker, WorkerPage } from "@/worker";
 import { useUserStore } from "@/store/userStore";
+import MessagesPage from "@/pages/MessagesPage";
 
 const AppRoutingSetup = () => {
   const { user } = useUserStore();
@@ -31,6 +32,7 @@ const AppRoutingSetup = () => {
                   />
                 }
               />
+              <Route path="/messages" element={<MessagesPage />} />
               <Route element={<RequireClient />}>
                 <Route path="/client/*" element={<ClientPage />} />
               </Route>
