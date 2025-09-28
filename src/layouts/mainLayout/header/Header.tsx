@@ -16,7 +16,7 @@ const Header = () => {
         {/* {pathname.includes('/account') ? <Breadcrumbs /> : <MegaMenu />} */}
         <MegaMenu />
 
-        <div className="sm:flex hidden">
+        <div className="sm:flex hidden ml-auto">
           <HeaderTopbar />
         </div>
       </Container>
