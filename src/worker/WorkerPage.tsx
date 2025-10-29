@@ -1,5 +1,4 @@
 import { Navigate, Route, Routes } from "react-router";
-import FindWorkPage from "./pages/FindWork";
 import {
   SavedErrandsPage,
   BidsPage,
@@ -11,6 +10,7 @@ import {
   BillingEarningsPage,
   InvoicesPage,
   PayoutsPage,
+  FindWorkPage,
 } from "./pages";
 
 const WorkerPage = () => (

@@ -47,6 +47,14 @@ export type Chat = {
   exampleField: Scalars['Int']['output'];
 };
 
+export type Client = {
+  __typename?: 'Client';
+  errands: Array<Errand>;
+  id: Scalars['ID']['output'];
+  user: User;
+  userId: Scalars['ID']['output'];
+};
+
 export type CreateAddressInput = {
   address: Scalars['String']['input'];
   label: Scalars['String']['input'];
@@ -83,6 +91,8 @@ export type Errand = {
   __typename?: 'Errand';
   applicationDeadline?: Maybe<Scalars['DateTime']['output']>;
   assignedTo?: Maybe<Scalars['String']['output']>;
+  client: Client;
+  clientId: Scalars['String']['output'];
   completionDeadline?: Maybe<Scalars['DateTime']['output']>;
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
@@ -99,8 +109,18 @@ export type Errand = {
   status: ErrandStatus;
   title: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
-  userId: Scalars['String']['output'];
   workerType?: Maybe<WorkerType>;
+};
+
+export type ErrandQueryInput = {
+  /** Maximum distance in kilometers for location filtering */
+  maxDistanceKm?: InputMaybe<Scalars['Float']['input']>;
+  /** Pagination parameters */
+  pagination?: InputMaybe<PaginationInput>;
+  /** Search keyword for title, description, or category filtering */
+  search?: InputMaybe<Scalars['String']['input']>;
+  /** Type of errand feed to retrieve */
+  type?: Scalars['String']['input'];
 };
 
 export type ErrandStatus =
@@ -109,6 +129,41 @@ export type ErrandStatus =
   | 'DRAFT'
   | 'IN_PROGRESS'
   | 'OPEN';
+
+export type ErrandSubscriptionPayload = {
+  __typename?: 'ErrandSubscriptionPayload';
+  distance?: Maybe<Scalars['Float']['output']>;
+  errand: Errand;
+  type: Scalars['String']['output'];
+  userId?: Maybe<Scalars['String']['output']>;
+};
+
+export type ErrandWithClient = {
+  __typename?: 'ErrandWithClient';
+  applicationDeadline?: Maybe<Scalars['DateTime']['output']>;
+  assignedTo?: Maybe<Scalars['String']['output']>;
+  client: Client;
+  clientId: Scalars['String']['output'];
+  clientName?: Maybe<Scalars['String']['output']>;
+  clientRating?: Maybe<Scalars['Float']['output']>;
+  completionDeadline?: Maybe<Scalars['DateTime']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  hourlyRate?: Maybe<Scalars['Float']['output']>;
+  id: Scalars['String']['output'];
+  latitude?: Maybe<Scalars['Float']['output']>;
+  longitude?: Maybe<Scalars['Float']['output']>;
+  price?: Maybe<Scalars['Float']['output']>;
+  pricingType: PricingType;
+  profession?: Maybe<Scalars['String']['output']>;
+  reviews: Array<Review>;
+  service?: Maybe<Scalars['String']['output']>;
+  serviceAddress?: Maybe<Scalars['String']['output']>;
+  status: ErrandStatus;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  workerType?: Maybe<WorkerType>;
+};
 
 export type GeoPoint = {
   __typename?: 'GeoPoint';
@@ -129,6 +184,8 @@ export type Mutation = {
   __typename?: 'Mutation';
   addAddress: User;
   addWorkerServices: User;
+  /** Clear user search history */
+  clearSearchHistory: Scalars['Boolean']['output'];
   createApplication: Application;
   createChat: Chat;
   createErrand: Errand;
@@ -262,6 +319,24 @@ export type OnboardingProgress =
   | 'ROLE_SELECTED'
   | 'SERVICES_SELECTED';
 
+export type PaginatedErrands = {
+  __typename?: 'PaginatedErrands';
+  data: Array<ErrandWithClient>;
+  hasNextPage: Scalars['Boolean']['output'];
+  hasPreviousPage: Scalars['Boolean']['output'];
+  limit: Scalars['Int']['output'];
+  page: Scalars['Int']['output'];
+  total: Scalars['Int']['output'];
+  totalPages: Scalars['Int']['output'];
+};
+
+export type PaginationInput = {
+  /** Number of items per page */
+  limit?: Scalars['Int']['input'];
+  /** Page number (1-based) */
+  page?: Scalars['Int']['input'];
+};
+
 export type PlaceDetailsInput = {
   placeId: Scalars['String']['input'];
 };
@@ -276,6 +351,8 @@ export type Query = {
   chat: Chat;
   errand: Errand;
   errands: Array<Errand>;
+  /** Advanced errand query with personalized feeds and location-based filtering */
+  getErrands: PaginatedErrands;
   placeDetails: AddressDetails;
   review: Review;
   service: Service;
@@ -283,6 +360,8 @@ export type Query = {
   services: Array<Service>;
   suggestAddresses: Array<AddressSuggestion>;
   user: User;
+  /** Get user search history for workers */
+  userSearchHistory: Array<Search>;
   wallet: Wallet;
 };
 
@@ -304,6 +383,11 @@ export type QueryErrandArgs = {
 
 export type QueryErrandsArgs = {
   dto: GetAllErrandInput;
+};
+
+
+export type QueryGetErrandsArgs = {
+  input: ErrandQueryInput;
 };
 
 
@@ -364,6 +448,15 @@ export type SaveUserAddressInput = {
   longitude: Scalars['Float']['input'];
 };
 
+export type Search = {
+  __typename?: 'Search';
+  createdAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  keyword: Scalars['String']['output'];
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
+  workerId?: Maybe<Scalars['ID']['output']>;
+};
+
 export type Service = {
   __typename?: 'Service';
   category?: Maybe<ServiceCategory>;
@@ -384,6 +477,16 @@ export type ServiceCategory = {
 export type ServiceCategoryType =
   | 'CASUAL'
   | 'PROFESSIONAL';
+
+export type Subscription = {
+  __typename?: 'Subscription';
+  /** Subscribe to new errands created nearby */
+  errandCreated: ErrandSubscriptionPayload;
+  /** Subscribe to errand deletions */
+  errandDeleted: ErrandSubscriptionPayload;
+  /** Subscribe to errand updates */
+  errandUpdated: ErrandSubscriptionPayload;
+};
 
 export type SuggestAddressInput = {
   input: Scalars['String']['input'];
@@ -531,6 +634,13 @@ export type SuggestAddressesQueryVariables = Exact<{
 
 export type SuggestAddressesQuery = { __typename?: 'Query', suggestAddresses: Array<{ __typename?: 'AddressSuggestion', description: string, placeId: string }> };
 
+export type GetErrandsQueryVariables = Exact<{
+  input: ErrandQueryInput;
+}>;
+
+
+export type GetErrandsQuery = { __typename?: 'Query', getErrands: { __typename?: 'PaginatedErrands', hasNextPage: boolean, hasPreviousPage: boolean, limit: number, page: number, total: number, totalPages: number, data: Array<{ __typename?: 'ErrandWithClient', applicationDeadline?: any | null, assignedTo?: string | null, clientId: string, clientName?: string | null, clientRating?: number | null, completionDeadline?: any | null, createdAt: any, description?: string | null, hourlyRate?: number | null, id: string, latitude?: number | null, longitude?: number | null, price?: number | null, pricingType: PricingType, profession?: string | null, service?: string | null, serviceAddress?: string | null, status: ErrandStatus, title: string, updatedAt: any, workerType?: WorkerType | null }> } };
+
 export type ServiceCategoriesQueryVariables = Exact<{
   input?: InputMaybe<GetServiceCategoriesInput>;
 }>;
@@ -538,10 +648,30 @@ export type ServiceCategoriesQueryVariables = Exact<{
 
 export type ServiceCategoriesQuery = { __typename?: 'Query', serviceCategories: Array<{ __typename?: 'ServiceCategory', name: string, type: ServiceCategoryType, services?: Array<{ __typename?: 'Service', name: string, type: ServiceCategoryType, id: string, categoryId: string }> | null }> };
 
+export type GetUserSearchHistoryQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetUserSearchHistoryQuery = { __typename?: 'Query', userSearchHistory: Array<{ __typename?: 'Search', id: string, keyword: string, workerId?: string | null, createdAt?: any | null, updatedAt?: any | null }> };
+
 export type UserQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type UserQuery = { __typename?: 'Query', user: { __typename?: 'User', activeAddressId?: string | null, activeRole?: UserRole | null, country?: string | null, createdAt: any, displayUsername?: string | null, email: string, emailVerified: boolean, id: string, image?: string | null, name: string, phoneNumber?: string | null, phoneNumberVerified?: boolean | null, twoFactorEnabled?: boolean | null, updatedAt: any, username?: string | null, onboardingProgress: OnboardingProgress, userAddress?: Array<{ __typename?: 'UserAddress', label: string, address: string, id: string } | null> | null } };
+
+export type ErrandCreatedSubscriptionVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ErrandCreatedSubscription = { __typename?: 'Subscription', errandCreated: { __typename?: 'ErrandSubscriptionPayload', type: string, userId?: string | null, distance?: number | null, errand: { __typename?: 'Errand', id: string, title: string, description?: string | null, pricingType: PricingType, price?: number | null, hourlyRate?: number | null, status: ErrandStatus, workerType?: WorkerType | null, profession?: string | null, service?: string | null, serviceAddress?: string | null, latitude?: number | null, longitude?: number | null, createdAt: any } } };
+
+export type ErrandDeletedSubscriptionVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ErrandDeletedSubscription = { __typename?: 'Subscription', errandDeleted: { __typename?: 'ErrandSubscriptionPayload', type: string, userId?: string | null, errand: { __typename?: 'Errand', id: string, title: string } } };
+
+export type ErrandUpdatedSubscriptionVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ErrandUpdatedSubscription = { __typename?: 'Subscription', errandUpdated: { __typename?: 'ErrandSubscriptionPayload', type: string, userId?: string | null, errand: { __typename?: 'Errand', id: string, title: string, description?: string | null, status: ErrandStatus, assignedTo?: string | null, updatedAt: any } } };
 
 
 export const SaveUserAddressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SaveUserAddress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"dto"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SaveUserAddressInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"saveUserAddress"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"dto"},"value":{"kind":"Variable","name":{"kind":"Name","value":"dto"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activeAddressId"}},{"kind":"Field","name":{"kind":"Name","value":"activeRole"}},{"kind":"Field","name":{"kind":"Name","value":"country"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"displayUsername"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerified"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"image"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"onboardingProgress"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumberVerified"}},{"kind":"Field","name":{"kind":"Name","value":"twoFactorEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"username"}}]}}]}}]} as unknown as DocumentNode<SaveUserAddressMutation, SaveUserAddressMutationVariables>;
@@ -550,5 +680,10 @@ export const CreateUserRoleDocument = {"kind":"Document","definitions":[{"kind":
 export const UseCurrentAddressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UseCurrentAddress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ReverseGeocodeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"useCurrentAddress"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activeAddressId"}},{"kind":"Field","name":{"kind":"Name","value":"activeRole"}},{"kind":"Field","name":{"kind":"Name","value":"country"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"displayUsername"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerified"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"image"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"onboardingProgress"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumberVerified"}},{"kind":"Field","name":{"kind":"Name","value":"twoFactorEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"username"}}]}}]}}]} as unknown as DocumentNode<UseCurrentAddressMutation, UseCurrentAddressMutationVariables>;
 export const PlaceDetailsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PlaceDetails"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"PlaceDetailsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"placeDetails"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"formattedAddress"}},{"kind":"Field","name":{"kind":"Name","value":"latitude"}},{"kind":"Field","name":{"kind":"Name","value":"longitude"}}]}}]}}]} as unknown as DocumentNode<PlaceDetailsQuery, PlaceDetailsQueryVariables>;
 export const SuggestAddressesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SuggestAddresses"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SuggestAddressInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"suggestAddresses"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"placeId"}}]}}]}}]} as unknown as DocumentNode<SuggestAddressesQuery, SuggestAddressesQueryVariables>;
+export const GetErrandsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetErrands"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ErrandQueryInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getErrands"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"applicationDeadline"}},{"kind":"Field","name":{"kind":"Name","value":"assignedTo"}},{"kind":"Field","name":{"kind":"Name","value":"clientId"}},{"kind":"Field","name":{"kind":"Name","value":"clientName"}},{"kind":"Field","name":{"kind":"Name","value":"clientRating"}},{"kind":"Field","name":{"kind":"Name","value":"completionDeadline"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"hourlyRate"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"latitude"}},{"kind":"Field","name":{"kind":"Name","value":"longitude"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"pricingType"}},{"kind":"Field","name":{"kind":"Name","value":"profession"}},{"kind":"Field","name":{"kind":"Name","value":"service"}},{"kind":"Field","name":{"kind":"Name","value":"serviceAddress"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"workerType"}}]}},{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}},{"kind":"Field","name":{"kind":"Name","value":"hasPreviousPage"}},{"kind":"Field","name":{"kind":"Name","value":"limit"}},{"kind":"Field","name":{"kind":"Name","value":"page"}},{"kind":"Field","name":{"kind":"Name","value":"total"}},{"kind":"Field","name":{"kind":"Name","value":"totalPages"}}]}}]}}]} as unknown as DocumentNode<GetErrandsQuery, GetErrandsQueryVariables>;
 export const ServiceCategoriesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ServiceCategories"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"GetServiceCategoriesInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"serviceCategories"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"services"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"categoryId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}}]} as unknown as DocumentNode<ServiceCategoriesQuery, ServiceCategoriesQueryVariables>;
+export const GetUserSearchHistoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUserSearchHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"userSearchHistory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"keyword"}},{"kind":"Field","name":{"kind":"Name","value":"workerId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetUserSearchHistoryQuery, GetUserSearchHistoryQueryVariables>;
 export const UserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"User"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activeAddressId"}},{"kind":"Field","name":{"kind":"Name","value":"activeRole"}},{"kind":"Field","name":{"kind":"Name","value":"country"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"displayUsername"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerified"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"image"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumberVerified"}},{"kind":"Field","name":{"kind":"Name","value":"twoFactorEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"onboardingProgress"}},{"kind":"Field","name":{"kind":"Name","value":"userAddress"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"address"}},{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]} as unknown as DocumentNode<UserQuery, UserQueryVariables>;
+export const ErrandCreatedDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"subscription","name":{"kind":"Name","value":"ErrandCreated"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errandCreated"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errand"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"pricingType"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"hourlyRate"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"workerType"}},{"kind":"Field","name":{"kind":"Name","value":"profession"}},{"kind":"Field","name":{"kind":"Name","value":"service"}},{"kind":"Field","name":{"kind":"Name","value":"serviceAddress"}},{"kind":"Field","name":{"kind":"Name","value":"latitude"}},{"kind":"Field","name":{"kind":"Name","value":"longitude"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"distance"}}]}}]}}]} as unknown as DocumentNode<ErrandCreatedSubscription, ErrandCreatedSubscriptionVariables>;
+export const ErrandDeletedDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"subscription","name":{"kind":"Name","value":"ErrandDeleted"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errandDeleted"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errand"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}}]}}]}}]} as unknown as DocumentNode<ErrandDeletedSubscription, ErrandDeletedSubscriptionVariables>;
+export const ErrandUpdatedDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"subscription","name":{"kind":"Name","value":"ErrandUpdated"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errandUpdated"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errand"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"assignedTo"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}}]}}]}}]} as unknown as DocumentNode<ErrandUpdatedSubscription, ErrandUpdatedSubscriptionVariables>;
