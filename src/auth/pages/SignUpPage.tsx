@@ -35,16 +35,19 @@ export default function SignUpPage() {
   const onSubmit = async (data: SignUpFormData) => {
     setIsLoading(true);
     try {
-      // In a real app, you would call your signup API here
-      // For demo purposes, we'll simulate a successful signup
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await auth.signUp.email({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        username: data.username,
+      });
 
       toast(
         "Welcome to Errandy! Please check your email to verify your account."
       );
 
       // Redirect to login page
-      navigate("/login");
+      navigate("/auth/login");
     } catch (error) {
       toast.error(
         <div>

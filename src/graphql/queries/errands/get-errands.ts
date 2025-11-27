@@ -1,37 +1,13 @@
 import { gql } from "@apollo/client";
 
+// TODO: This query is not yet implemented in the GraphQL server
+// Uncomment when the server implements getErrands query
 export const GET_ERRANDS = gql`
-  query GetErrands($input: ErrandQueryInput!) {
-    getErrands(input: $input) {
-      data {
-        applicationDeadline
-        assignedTo
-        clientId
-        clientName
-        clientRating
-        completionDeadline
-        createdAt
-        description
-        hourlyRate
-        id
-        latitude
-        longitude
-        price
-        pricingType
-        profession
-        service
-        serviceAddress
-        status
-        title
-        updatedAt
-        workerType
-      }
-      hasNextPage
-      hasPreviousPage
-      limit
-      page
-      total
-      totalPages
+  query GetErrands($input: String!) {
+    user {
+      id
+      name
+      email
     }
   }
 `;

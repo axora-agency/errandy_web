@@ -1,14 +1,14 @@
-import { gql } from '@apollo/client';
+// import { gql } from '@apollo/client';
 
-export const ERRAND_DELETED_SUBSCRIPTION = gql`
-  subscription ErrandDeleted {
-    errandDeleted {
-      errand {
-        id
-        title
-      }
-      type
-      userId
-    }
-  }
-`;
+// export const ERRAND_DELETED_SUBSCRIPTION = gql`
+//   subscription ErrandDeleted {
+//     errandDeleted {
+//       errand {
+//         id
+//         title
+//       }
+//       type
+//       userId
+//     }
+//   }
+// `;

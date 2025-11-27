@@ -4,8 +4,8 @@ export const GET_USER = gql`
   query User {
     user {
       activeAddressId
-      activeRole
       country
+      activeRole
       createdAt
       displayUsername
       email
