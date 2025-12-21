@@ -1,5 +1,5 @@
-import Logo from "./logoWhite.png";
-import LogoDark from "./logoBlack.png";
-import Favicon from "./icon.png";
+import Logo from "./errandy.png";
+import AuthPlaceholder from "./auth-placeholder.png"
+import Favicon from "./errandy-icon.png";
 
-export { Logo, LogoDark, Favicon };
+export { Logo, Favicon, AuthPlaceholder };

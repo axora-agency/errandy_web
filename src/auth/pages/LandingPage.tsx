@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { Logo } from "@/assets";
 
 const features = [
   {
@@ -130,9 +131,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="flex items-center space-x-2"
             >
-              <div className="w-8 h-8 bg-primary rounded-sm flex items-center justify-center">
-                <span className="text-white font-bold text-lg">E</span>
-              </div>
+              <img src={Logo} alt="Errandy" className="w-10 h-10" />
               <span className="text-2xl font-bold text-gray-900">Errandy</span>
             </motion.div>
 
@@ -554,9 +553,7 @@ export default function LandingPage() {
             {/* Logo and Newsletter */}
             <div className="lg:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">E</span>
-                </div>
+                <img src={Logo} alt="Errandy" className="w-10 h-10" />
                 <span className="text-2xl font-bold">Errandy</span>
               </div>
               <p className="text-gray-400 mb-6">

@@ -5,20 +5,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import {
   resetPasswordSchema,
   type ResetPasswordFormData,
 } from "@/lib/validations";
 import { Eye, EyeOff, Lock, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { ToastMessage } from "@/components";
 
 export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -44,29 +43,22 @@ export default function ResetPasswordPage() {
 
       setIsSuccess(true);
       toast.success(
-        <div>
-          <h1>
-            <strong>Password updated successfully</strong>
-          </h1>
-          <p>
-            Your password has been reset. You can now sign in with your new
-            password.
-          </p>
-        </div>
+        <ToastMessage
+          title="Password updated successfully"
+          description="Your password has been reset. You can now sign in with your new password."
+        />
       );
 
       // Redirect to login after a delay
       setTimeout(() => {
-        navigate("/login");
+        navigate("/auth/login");
       }, 2000);
     } catch (error) {
       toast.error(
-        <div>
-          <h1>
-            <strong>Failed to reset password</strong>
-          </h1>
-          <p>An error occurred. Please try again.</p>
-        </div>
+        <ToastMessage
+          title="Failed to reset password"
+          description="An error occurred. Please try again."
+        />
       );
     } finally {
       setIsLoading(false);
@@ -75,29 +67,21 @@ export default function ResetPasswordPage() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center w-full px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <Card>
-            <CardHeader className="space-y-1">
-              <div className="flex items-center justify-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">E</span>
-                </div>
-                <span className="text-2xl font-bold">Errandy</span>
+          <div className="flex flex-col gap-6">
+            <FieldGroup>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <h1 className="text-xl font-bold">Password reset successful</h1>
+                <FieldDescription>
+                  Your password has been updated successfully
+                </FieldDescription>
               </div>
-              <CardTitle className="text-2xl text-center">
-                Password reset successful
-              </CardTitle>
-              <CardDescription className="text-center">
-                Your password has been updated successfully
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                   <CheckCircle className="h-8 w-8 text-green-600" />
@@ -105,44 +89,39 @@ export default function ResetPasswordPage() {
                 <p className="text-gray-600">
                   Redirecting you to the login page...
                 </p>
-                <Link to="/login">
-                  <Button className="w-full">Go to login</Button>
-                </Link>
+                <Field>
+                  <Link to="/auth/login">
+                    <Button className="w-full">Go to login</Button>
+                  </Link>
+                </Field>
               </div>
-            </CardContent>
-          </Card>
+            </FieldGroup>
+          </div>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center w-full px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <Card>
-          <CardHeader className="space-y-1">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">E</span>
+        <div className="flex flex-col gap-6">
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <FieldGroup>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <h1 className="text-xl font-bold">Reset your password</h1>
+                <FieldDescription>
+                  Enter your new password below
+                </FieldDescription>
               </div>
-              <span className="text-2xl font-bold">Errandy</span>
-            </div>
-            <CardTitle className="text-2xl text-center">
-              Reset your password
-            </CardTitle>
-            <CardDescription className="text-center">
-              Enter your new password below
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">New Password</Label>
+
+              <Field>
+                <FieldLabel htmlFor="password">New Password</FieldLabel>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -169,10 +148,12 @@ export default function ResetPasswordPage() {
                     {errors.password.message}
                   </p>
                 )}
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Field>
+                <FieldLabel htmlFor="confirmPassword">
+                  Confirm New Password
+                </FieldLabel>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -199,23 +180,25 @@ export default function ResetPasswordPage() {
                     {errors.confirmPassword.message}
                   </p>
                 )}
+              </Field>
+
+              <Field>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Updating..." : "Update password"}
+                </Button>
+              </Field>
+
+              <div className="text-center">
+                <Link
+                  to="/auth/login"
+                  className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium"
+                >
+                  Back to login
+                </Link>
               </div>
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Updating..." : "Update password"}
-              </Button>
-            </form>
-
-            <div className="text-center">
-              <Link
-                to="/login"
-                className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium"
-              >
-                Back to login
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+            </FieldGroup>
+          </form>
+        </div>
       </motion.div>
     </div>
   );

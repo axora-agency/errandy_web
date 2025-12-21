@@ -5,19 +5,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldSeparator,
+} from "@/components/ui/field";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
 import { auth } from "@/lib/auth";
 import { Eye, EyeOff, Lock, User2 } from "lucide-react";
 import { toast } from "sonner";
-import { SocialLoginButton, ToastMessage } from "@/components";
+import { ToastMessage } from "@/components";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -86,59 +85,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center w-full px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-lg"
+        className="w-full max-w-md"
       >
-        <Card>
-          <CardHeader className="space-y-1">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">E</span>
+        <div className="flex flex-col gap-6">
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <FieldGroup>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <h1 className="text-xl font-bold">Welcome to Errandy</h1>
+                <FieldDescription>
+                  Don&apos;t have an account?{" "}
+                  <Link to="/auth/signup">Sign up</Link>
+                </FieldDescription>
               </div>
-              <span className="text-2xl font-bold">Errandy</span>
-            </div>
-            <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
-            <CardDescription className="text-center">
-              Enter your credentials to access your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-4">
-              <h1 className="uppercase text-muted-foreground">
-                Sign up with socials :{" "}
-              </h1>
-              <div className="flex space-x-4 mt-2">
-                <SocialLoginButton
-                  provider="google"
-                  onClick={() => handleSocialLogin("google")}
-                  disabled={isLoading}
-                />
-                <SocialLoginButton
-                  provider="apple"
-                  onClick={() => handleSocialLogin("apple")}
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with email
-                </span>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Username</Label>
+              <Field>
+                <FieldLabel htmlFor="username">Username</FieldLabel>
                 <div className="relative">
                   <User2 className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -154,10 +120,10 @@ export default function LoginPage() {
                     {errors.username.message}
                   </p>
                 )}
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+              <Field>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -184,33 +150,61 @@ export default function LoginPage() {
                     {errors.password.message}
                   </p>
                 )}
-              </div>
+                <div className="flex justify-end mt-1">
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+              </Field>
 
-              <div className="flex items-center justify-between">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              <Field>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Login"}
+                </Button>
+              </Field>
+
+              <FieldSeparator>Or</FieldSeparator>
+
+              <Field className="grid gap-4 sm:grid-cols-2">
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => handleSocialLogin("apple")}
+                  disabled={isLoading}
                 >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign in"}
-              </Button>
-            </form>
-
-            <div className="text-center text-sm">
-              Don't have an account?{" "}
-              <Link
-                to="/auth/signup"
-                className="text-blue-600 hover:text-blue-800 transition-colors font-medium"
-              >
-                Sign up
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path
+                      d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  Continue with Apple
+                </Button>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => handleSocialLogin("google")}
+                  disabled={isLoading}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path
+                      d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  Continue with Google
+                </Button>
+              </Field>
+            </FieldGroup>
+          </form>
+          <FieldDescription className="px-6 text-center">
+            By clicking continue, you agree to our{" "}
+            <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+          </FieldDescription>
+        </div>
       </motion.div>
     </div>
   );
