@@ -16,12 +16,11 @@ import { useErrands } from "@/hooks/useErrands";
 import HeaderBlock from "./blocks/HeaderBlock";
 import SearchBlock from "./blocks/SearchBlock";
 import ErrandCardBlock from "./blocks/ErrandCardBlock";
-import LoadMoreBlock from "./blocks/LoadMoreBlock";
 
 const FindWorkPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
-    "feed" | "best_match" | "most_recent" | "saved"
-  >("feed");
+    "FEED" | "BEST_MATCH" | "MOST_RECENT" | "SAVED"
+  >("FEED");
   const [searchKeyword, setSearchKeyword] = useState("");
 
   // Use the GraphQL hook for real data
@@ -46,7 +45,7 @@ const FindWorkPage: React.FC = () => {
   });
 
   const handleTabChange = (value: string) => {
-    const tabType = value as "feed" | "best_match" | "most_recent" | "saved";
+    const tabType = value as "FEED" | "BEST_MATCH" | "MOST_RECENT" | "SAVED";
     setActiveTab(tabType);
     setSearchKeyword(""); // Clear search when switching tabs
     changeTab(tabType);
@@ -150,31 +149,31 @@ const FindWorkPage: React.FC = () => {
       >
         <TabsList className="bg-transparent border-b border-gray-100 rounded-none h-auto p-0 justify-start w-full">
           <TabsTrigger
-            value="feed"
+            value="FEED"
             className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:text-blue-600 data-[state=active]:shadow-[0_2px_0_0_theme(colors.blue.500)] rounded-none border-b-2 border-transparent px-4 py-3 font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
             Feed
           </TabsTrigger>
           <TabsTrigger
-            value="best_match"
+            value="BEST_MATCH"
             className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:text-blue-600 data-[state=active]:shadow-[0_2px_0_0_theme(colors.blue.500)] rounded-none border-b-2 border-transparent px-4 py-3 font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
             Best Matches
           </TabsTrigger>
           <TabsTrigger
-            value="most_recent"
+            value="MOST_RECENT"
             className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:text-blue-600 data-[state=active]:shadow-[0_2px_0_0_theme(colors.blue.500)] rounded-none border-b-2 border-transparent px-4 py-3 font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
             Most Recent
           </TabsTrigger>
           <TabsTrigger
-            value="saved"
+            value="SAVED"
             className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:text-blue-600 data-[state=active]:shadow-[0_2px_0_0_theme(colors.blue.500)] rounded-none border-b-2 border-transparent px-4 py-3 font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
             Saved Errands
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="feed" className="space-y-4 mt-4">
+        <TabsContent value="FEED" className="space-y-4 mt-4">
           {loading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Loading errands...</p>
@@ -203,7 +202,7 @@ const FindWorkPage: React.FC = () => {
             </div>
           )}
         </TabsContent>
-        <TabsContent value="best_match" className="space-y-4 mt-4">
+        <TabsContent value="BEST_MATCH" className="space-y-4 mt-4">
           {loading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Finding best matches...</p>
@@ -233,7 +232,7 @@ const FindWorkPage: React.FC = () => {
             </div>
           )}
         </TabsContent>
-        <TabsContent value="most_recent" className="space-y-4 mt-4">
+        <TabsContent value="MOST_RECENT" className="space-y-4 mt-4">
           {loading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Loading recent errands...</p>
@@ -262,7 +261,7 @@ const FindWorkPage: React.FC = () => {
             </div>
           )}
         </TabsContent>
-        <TabsContent value="saved" className="space-y-4 mt-4">
+        <TabsContent value="SAVED" className="space-y-4 mt-4">
           {loading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Loading saved errands...</p>

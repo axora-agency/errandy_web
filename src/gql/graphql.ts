@@ -120,7 +120,7 @@ export type ErrandQueryInput = {
   /** Search keyword for title, description, or category filtering */
   search?: InputMaybe<Scalars['String']['input']>;
   /** Type of errand feed to retrieve */
-  type?: Scalars['String']['input'];
+  type?: InputMaybe<ErrandType>;
 };
 
 export type ErrandStatus =
@@ -137,6 +137,14 @@ export type ErrandSubscriptionPayload = {
   type: Scalars['String']['output'];
   userId?: Maybe<Scalars['String']['output']>;
 };
+
+/** Type of errand feed to retrieve */
+export type ErrandType =
+  | 'BEST_MATCH'
+  | 'FEED'
+  | 'MOST_RECENT'
+  | 'SAVED'
+  | 'SEARCH';
 
 export type ErrandWithClient = {
   __typename?: 'ErrandWithClient';

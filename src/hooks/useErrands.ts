@@ -20,13 +20,31 @@ export interface UseErrandsOptions {
 
 export function useErrands(options: UseErrandsOptions = {}) {
   const {
-    type = "feed",
-    search,
-    page = 1,
+    type: initialType = "FEED",
+    search: initialSearch,
+    page: initialPage = 1,
     limit = 10,
     maxDistanceKm = 20,
     enableSubscriptions = true,
   } = options;
+
+  // Internal state to manage current query parameters
+  const [queryInput, setQueryInput] = useState<ErrandQueryInput>(() => {
+    const input: ErrandQueryInput = {
+      pagination: { page: initialPage, limit },
+      maxDistanceKm,
+    };
+
+    if (initialType) {
+      input.type = initialType;
+    }
+
+    if (initialSearch) {
+      input.search = initialSearch;
+    }
+
+    return input;
+  });
 
   const [localErrands, setLocalErrands] = useState<ErrandWithClient[]>([]);
 
@@ -35,13 +53,9 @@ export function useErrands(options: UseErrandsOptions = {}) {
     GetErrandsQueryVariables
   >(GET_ERRANDS, {
     variables: {
-      input: {
-        type,
-        search,
-        pagination: { page, limit },
-        maxDistanceKm,
-      },
+      input: queryInput,
     },
+    notifyOnNetworkStatusChange: true,
     onCompleted: (data) => {
       if (data?.getErrands?.data) {
         setLocalErrands(data.getErrands.data as ErrandWithClient[]);
@@ -69,10 +83,8 @@ export function useErrands(options: UseErrandsOptions = {}) {
       await fetchMore({
         variables: {
           input: {
-            type,
-            search,
-            pagination: { page: page + 1, limit },
-            maxDistanceKm,
+            ...queryInput,
+            pagination: { page: (queryInput.pagination?.page || 1) + 1, limit },
           },
         },
         updateQuery: (prev, { fetchMoreResult }) => {
@@ -98,48 +110,40 @@ export function useErrands(options: UseErrandsOptions = {}) {
   };
 
   const searchErrands = async (keyword: string) => {
-    const result = await refetch({
-      input: {
-        type: "search",
-        search: keyword,
-        pagination: { page: 1, limit },
-        maxDistanceKm,
-      },
-    });
+    const newInput: ErrandQueryInput = {
+      type: "SEARCH",
+      search: keyword,
+      pagination: { page: 1, limit },
+      maxDistanceKm,
+    };
 
-    if (result.data?.getErrands?.data) {
-      setLocalErrands(result.data.getErrands.data as ErrandWithClient[]);
-    }
+    setQueryInput(newInput);
   };
 
   const changeTab = async (newType: ErrandQueryInput["type"]) => {
-    const result = await refetch({
-      input: {
-        type: newType,
-        search: newType === "search" ? search : undefined,
-        pagination: { page: 1, limit },
-        maxDistanceKm,
-      },
-    });
+    const newInput: ErrandQueryInput = {
+      pagination: { page: 1, limit },
+      maxDistanceKm,
+    };
 
-    if (result.data?.getErrands?.data) {
-      setLocalErrands(result.data.getErrands.data as ErrandWithClient[]);
+    if (newType) {
+      newInput.type = newType;
     }
+
+    if (newType === "SEARCH" && queryInput.search) {
+      newInput.search = queryInput.search;
+    }
+
+    setQueryInput(newInput);
   };
 
   const goToPage = async (pageNumber: number) => {
-    const result = await refetch({
-      input: {
-        type,
-        search,
-        pagination: { page: pageNumber, limit },
-        maxDistanceKm,
-      },
-    });
+    const newInput: ErrandQueryInput = {
+      ...queryInput,
+      pagination: { page: pageNumber, limit },
+    };
 
-    if (result.data?.getErrands?.data) {
-      setLocalErrands(result.data.getErrands.data as ErrandWithClient[]);
-    }
+    setQueryInput(newInput);
   };
 
   return {
