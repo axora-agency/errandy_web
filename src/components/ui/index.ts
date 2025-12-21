@@ -10,3 +10,4 @@ export * from "./sheet";
 export * from "./sonner";
 export * from "./tabs";
 export * from "./empty"
+export * from "./pagination"

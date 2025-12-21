@@ -23,7 +23,7 @@ export function useErrands(options: UseErrandsOptions = {}) {
     type = "feed",
     search,
     page = 1,
-    limit = 20,
+    limit = 10,
     maxDistanceKm = 20,
     enableSubscriptions = true,
   } = options;
@@ -97,8 +97,8 @@ export function useErrands(options: UseErrandsOptions = {}) {
     refetch();
   };
 
-  const searchErrands = (keyword: string) => {
-    refetch({
+  const searchErrands = async (keyword: string) => {
+    const result = await refetch({
       input: {
         type: "search",
         search: keyword,
@@ -106,10 +106,14 @@ export function useErrands(options: UseErrandsOptions = {}) {
         maxDistanceKm,
       },
     });
+
+    if (result.data?.getErrands?.data) {
+      setLocalErrands(result.data.getErrands.data as ErrandWithClient[]);
+    }
   };
 
-  const changeTab = (newType: ErrandQueryInput["type"]) => {
-    refetch({
+  const changeTab = async (newType: ErrandQueryInput["type"]) => {
+    const result = await refetch({
       input: {
         type: newType,
         search: newType === "search" ? search : undefined,
@@ -117,6 +121,25 @@ export function useErrands(options: UseErrandsOptions = {}) {
         maxDistanceKm,
       },
     });
+
+    if (result.data?.getErrands?.data) {
+      setLocalErrands(result.data.getErrands.data as ErrandWithClient[]);
+    }
+  };
+
+  const goToPage = async (pageNumber: number) => {
+    const result = await refetch({
+      input: {
+        type,
+        search,
+        pagination: { page: pageNumber, limit },
+        maxDistanceKm,
+      },
+    });
+
+    if (result.data?.getErrands?.data) {
+      setLocalErrands(result.data.getErrands.data as ErrandWithClient[]);
+    }
   };
 
   return {
@@ -137,6 +160,7 @@ export function useErrands(options: UseErrandsOptions = {}) {
     refresh,
     searchErrands,
     changeTab,
+    goToPage,
     refetch,
   };
 }

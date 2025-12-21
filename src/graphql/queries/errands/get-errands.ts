@@ -25,6 +25,7 @@ export const GET_ERRANDS = gql`
         assignedTo
         clientName
         clientRating
+        distance
         client {
           id
           userId
