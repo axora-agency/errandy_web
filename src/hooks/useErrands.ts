@@ -1,10 +1,16 @@
-import type { ErrandQueryInput, ErrandSubscriptionPayload, ErrandWithClient, GetErrandsQuery, GetErrandsQueryVariables } from '@/gql/graphql';
-import { ERRAND_CREATED_SUBSCRIPTION, GET_ERRANDS } from '@/graphql';
-import { useQuery, useSubscription } from '@apollo/client';
-import { useState } from 'react';
+import type {
+  ErrandQueryInput,
+  ErrandSubscriptionPayload,
+  ErrandWithClient,
+  GetErrandsQuery,
+  GetErrandsQueryVariables,
+} from "@/gql/graphql";
+import { ERRAND_CREATED_SUBSCRIPTION, GET_ERRANDS } from "@/graphql";
+import { useQuery, useSubscription } from "@apollo/client";
+import { useState } from "react";
 
 export interface UseErrandsOptions {
-  type?: ErrandQueryInput['type'];
+  type?: ErrandQueryInput["type"];
   search?: string;
   page?: number;
   limit?: number;
@@ -14,7 +20,7 @@ export interface UseErrandsOptions {
 
 export function useErrands(options: UseErrandsOptions = {}) {
   const {
-    type = 'feed',
+    type = "feed",
     search,
     page = 1,
     limit = 20,
@@ -37,7 +43,9 @@ export function useErrands(options: UseErrandsOptions = {}) {
       },
     },
     onCompleted: (data) => {
-      setLocalErrands(data.getErrands.data as ErrandWithClient[]);
+      if (data?.getErrands?.data) {
+        setLocalErrands(data.getErrands.data as ErrandWithClient[]);
+      }
     },
   });
 
@@ -46,9 +54,9 @@ export function useErrands(options: UseErrandsOptions = {}) {
     errandCreated: ErrandSubscriptionPayload;
   }>(ERRAND_CREATED_SUBSCRIPTION, {
     skip: !enableSubscriptions,
-    onSubscriptionData: ({ subscriptionData }) => {
-      if (subscriptionData.data?.errandCreated) {
-        const newErrand = subscriptionData.data.errandCreated.errand;
+    onData: ({ data }) => {
+      if (data?.data?.errandCreated) {
+        const newErrand = data.data.errandCreated.errand;
         // setLocalErrands((prev) => [newErrand, ...prev]);
       }
     },
@@ -72,13 +80,16 @@ export function useErrands(options: UseErrandsOptions = {}) {
           return {
             getErrands: {
               ...fetchMoreResult.getErrands,
-              data: [...prev.getErrands.data, ...fetchMoreResult.getErrands.data],
+              data: [
+                ...prev.getErrands.data,
+                ...fetchMoreResult.getErrands.data,
+              ],
             },
           };
         },
       });
     } catch (error) {
-      console.error('Error loading more errands:', error);
+      console.error("Error loading more errands:", error);
     }
   };
 
@@ -89,7 +100,7 @@ export function useErrands(options: UseErrandsOptions = {}) {
   const searchErrands = (keyword: string) => {
     refetch({
       input: {
-        type: 'search',
+        type: "search",
         search: keyword,
         pagination: { page: 1, limit },
         maxDistanceKm,
@@ -97,11 +108,11 @@ export function useErrands(options: UseErrandsOptions = {}) {
     });
   };
 
-  const changeTab = (newType: ErrandQueryInput['type']) => {
+  const changeTab = (newType: ErrandQueryInput["type"]) => {
     refetch({
       input: {
         type: newType,
-        search: newType === 'search' ? search : undefined,
+        search: newType === "search" ? search : undefined,
         pagination: { page: 1, limit },
         maxDistanceKm,
       },
@@ -111,11 +122,11 @@ export function useErrands(options: UseErrandsOptions = {}) {
   return {
     // Data
     errands: localErrands,
-    total: data?.getErrands.total || 0,
-    page: data?.getErrands.page || 1,
-    totalPages: data?.getErrands.totalPages || 1,
-    hasNextPage: data?.getErrands.hasNextPage || false,
-    hasPreviousPage: data?.getErrands.hasPreviousPage || false,
+    total: data?.getErrands?.total || 0,
+    page: data?.getErrands?.page || 1,
+    totalPages: data?.getErrands?.totalPages || 1,
+    hasNextPage: data?.getErrands?.hasNextPage || false,
+    hasPreviousPage: data?.getErrands?.hasPreviousPage || false,
 
     // States
     loading,

@@ -5,7 +5,7 @@ const HeaderLogo = () => {
   return (
     <div className="flex gap-1 items-center -ms-1">
       <Link to="/" className="shrink-0">
-        <CustomLogo size="sm" />
+        <CustomLogo size="lg" />
       </Link>
     </div>
   );
