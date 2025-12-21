@@ -17,10 +17,11 @@ export default defineConfig({
   },
   server: {
     host: true, // Enable listening on all hosts
+    port: 3000,
     proxy: {
       // Match all subdomains dynamically
       "^.+\\.localhost": {
-        target: "http://localhost:5173", // Main backend
+        target: "http://localhost:3000", // Main backend
         rewrite: (path) => path, // Forward the full path as-is
         changeOrigin: true,
       },
