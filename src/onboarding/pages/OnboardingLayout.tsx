@@ -15,6 +15,7 @@ import type {
   SaveUserAddressInput,
 } from "@/gql/graphql";
 import CustomLogo from "@/components/custom/Logo";
+import { auth } from "@/lib/auth";
 
 export default function OnboardingLayout() {
   const { user } = useUserStore();
@@ -182,6 +183,12 @@ export default function OnboardingLayout() {
     }
   };
 
+  const handleLogout = () => {
+    auth.signOut().finally(() => {
+      navigate("/auth/login");
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Fixed Header */}
@@ -194,7 +201,7 @@ export default function OnboardingLayout() {
                 Hi, {user.name}
               </span>
             )}
-            <Button variant={"destructive"}>Logout</Button>
+            <Button variant={"destructive"} onClick={handleLogout} className="cursor-pointer">Logout</Button>
           </div>
         </div>
       </header>

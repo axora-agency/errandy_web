@@ -4,7 +4,7 @@ import { usernameClient } from "better-auth/client/plugins";
 const { VITE_API_URL } = import.meta.env;
 
 export const auth = createAuthClient({
-  baseURL: VITE_API_URL,
+  baseURL: `${VITE_API_URL}/api/auth`,
   plugins: [usernameClient()],
 });
 

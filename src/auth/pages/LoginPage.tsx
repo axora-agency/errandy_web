@@ -72,7 +72,10 @@ export default function LoginPage() {
     provider: "google" | "facebook" | "apple"
   ) => {
     try {
-      await auth.signIn.social({ provider });
+      await auth.signIn.social({
+        provider,
+        callbackURL: "http://localhost:3000",
+      });
     } catch (error) {
       toast.error(
         <ToastMessage
