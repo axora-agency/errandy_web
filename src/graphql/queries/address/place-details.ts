@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const PLACE_DETAILS = gql`
-  mutation PlaceDetails($placeId: String!) {
-    placeDetails(placeId: $placeId) {
+  query PlaceDetails($input: PlaceDetailsInput!) {
+    placeDetails(input: $input) {
       formattedAddress
       latitude
       longitude

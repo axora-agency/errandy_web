@@ -3,16 +3,24 @@ import { gql } from "@apollo/client";
 // TODO: This mutation is not yet implemented in the GraphQL server
 // Uncomment when the server implements addWorkerServices mutation
 export const ADD_WORKER_SERVICES = gql`
-  mutation AddWorkerServices($dto: SaveUserAddressInput!) {
-    createAddress(input: $dto) {
-      address
+  mutation AddWorkerServices($dto: AddWorkerServicesInput!) {
+    addWorkerServices(dto: $dto) {
+      activeAddressId
+      activeRole
+      country
       createdAt
+      displayUsername
+      email
+      emailVerified
       id
-      label
-      latitude
-      longitude
+      image
+      name
+      onboardingProgress
+      phoneNumber
+      phoneNumberVerified
+      twoFactorEnabled
       updatedAt
-      userId
+      username
     }
   }
 `;

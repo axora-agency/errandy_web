@@ -1,16 +1,24 @@
 import { gql } from "@apollo/client";
 
 export const USE_CURRENT_ADDRESS = gql`
-  mutation UseCurrentAddress($input: CurrentAddressInput!) {
+  mutation UseCurrentAddress($input: ReverseGeocodeInput!) {
     useCurrentAddress(input: $input) {
-      address
+      activeAddressId
+      activeRole
+      country
       createdAt
+      displayUsername
+      email
+      emailVerified
       id
-      label
-      latitude
-      longitude
+      image
+      name
+      username
       updatedAt
-      userId
+      twoFactorEnabled
+      phoneNumberVerified
+      phoneNumber
+      onboardingProgress
     }
   }
 `;

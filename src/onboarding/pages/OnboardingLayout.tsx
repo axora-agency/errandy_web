@@ -10,10 +10,11 @@ import { ADD_USER_ADDRESS } from "@/graphql/mutations/user/add-user-address";
 import { useUserStore } from "@/store/userStore";
 import { toast } from "sonner";
 import type {
+  AddAddressMutation,
+  AddAddressMutationVariables,
   SaveUserAddressInput,
-  SaveUserAddressMutation,
-  SaveUserAddressMutationVariables,
 } from "@/gql/graphql";
+import CustomLogo from "@/components/custom/Logo";
 
 export default function OnboardingLayout() {
   const { user } = useUserStore();
@@ -41,11 +42,11 @@ export default function OnboardingLayout() {
   );
 
   const [mutateAddAddress, { loading: addressSubmitting }] = useMutation<
-    SaveUserAddressMutation,
-    SaveUserAddressMutationVariables
+    AddAddressMutation,
+    AddAddressMutationVariables
   >(ADD_USER_ADDRESS, {
     onCompleted(data) {
-      if (data?.saveUserAddress) setUser(data.saveUserAddress);
+      if (data?.addAddress) setUser(data.addAddress);
     },
     onError(err) {
       console.error("add address error", err);
@@ -184,12 +185,14 @@ export default function OnboardingLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Fixed Header */}
-      <header className="w-full fixed top-0 left-0 z-40 bg-white/80 backdrop-blur border-b">
+      <header className="w-full fixed top-0 left-0 z-40 bg-background/80 backdrop-blur border-b border-border">
         <div className="max-w-5xl mx-auto p-4 flex items-center justify-between">
-          <div className="font-bold text-lg">MyApp</div>
+          <CustomLogo size="lg" />
           <div className="flex items-center gap-3">
             {user && (
-              <span className="text-sm text-gray-600">Hi, {user.name}</span>
+              <span className="text-sm text-muted-foreground">
+                Hi, {user.name}
+              </span>
             )}
             <Button variant={"destructive"}>Logout</Button>
           </div>
@@ -204,9 +207,9 @@ export default function OnboardingLayout() {
       </main>
 
       {/* Fixed Footer / Progress */}
-      <footer className="w-full fixed bottom-0 left-0 z-40 bg-white/90 border-t">
+      <footer className="w-full fixed bottom-0 left-0 z-40 bg-background/90 backdrop-blur border-t border-border">
         <div className="max-w-5xl mx-auto p-4">
-          <div className="w-full h-1 bg-gray-200 rounded mb-4">
+          <div className="w-full h-1 bg-muted rounded mb-4">
             <div
               className="h-1 bg-primary rounded transition-all duration-300"
               style={{ width: `${progressPercent}%` }}

@@ -21,7 +21,7 @@ const AuthLayout = () => {
         <img
           src={AuthPlaceholder}
           alt="Image"
-          className="absolute inset-0 h-full w-full object-cover object-top dark:brightness-[0.2] dark:grayscale "
+          className="absolute inset-0 h-full w-full object-cover object-top  "
         />
       </div>
     </div>

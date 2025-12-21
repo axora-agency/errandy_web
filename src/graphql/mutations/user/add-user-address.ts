@@ -1,16 +1,24 @@
 import { gql } from "@apollo/client";
 
 export const ADD_USER_ADDRESS = gql`
-  mutation SaveUserAddress($input: SaveUserAddressInput!) {
-    createAddress(input: $input) {
-      address
+  mutation AddAddress($dto: CreateAddressInput!) {
+    addAddress(dto: $dto) {
+      activeAddressId
+      activeRole
+      country
       createdAt
+      displayUsername
+      email
+      emailVerified
       id
-      label
-      latitude
-      longitude
+      image
+      name
+      username
+      onboardingProgress
+      phoneNumber
+      phoneNumberVerified
+      twoFactorEnabled
       updatedAt
-      userId
     }
   }
 `;

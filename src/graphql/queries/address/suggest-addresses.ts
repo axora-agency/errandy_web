@@ -1,12 +1,10 @@
 import { gql } from "@apollo/client";
 
 export const SUGGEST_ADDRESSES = gql`
-  query SuggestAddresses($input: String!) {
+  query SuggestAddresses($input: SuggestAddressInput!) {
     suggestAddresses(input: $input) {
-      suggestions {
-        description
-        placeId
-      }
+      description
+      placeId
     }
   }
 `;
