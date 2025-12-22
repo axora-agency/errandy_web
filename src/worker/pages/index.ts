@@ -1,5 +1,6 @@
 // Worker Pages
 export * from './FindWork'
+export * from './Errand'
 export { default as SavedErrandsPage } from './SavedErrandsPage';
 export { default as BidsPage } from './BidsPage';
 export { default as ShopsPage } from './ShopsPage';

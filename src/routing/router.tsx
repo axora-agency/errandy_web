@@ -49,6 +49,7 @@ import {
   InvoicesPage,
   PayoutsPage,
   FindWorkPage,
+  ErrandPage,
 } from "@/worker/pages";
 
 // Error pages
@@ -256,6 +257,11 @@ export const router = createBrowserRouter([
                       },
                     ],
                   },
+                  {
+                    path: "errand/:errandId",
+                    element: <ErrandPage />,
+                    handle: { title: "Errand Details", breadcrumb: "Errand" }
+                  }
                 ],
               },
             ],
