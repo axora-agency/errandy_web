@@ -20,142 +20,128 @@ export interface UseErrandsOptions {
 
 export function useErrands(options: UseErrandsOptions = {}) {
   const {
-    type: initialType = "FEED",
-    search: initialSearch,
-    page: initialPage = 1,
+    type = "FEED",
+    search,
+    page = 1,
     limit = 10,
     maxDistanceKm = 20,
     enableSubscriptions = true,
   } = options;
 
-  // Internal state to manage current query parameters
-  const [queryInput, setQueryInput] = useState<ErrandQueryInput>(() => {
-    const input: ErrandQueryInput = {
-      pagination: { page: initialPage, limit },
-      maxDistanceKm,
-    };
-
-    if (initialType) {
-      input.type = initialType;
-    }
-
-    if (initialSearch) {
-      input.search = initialSearch;
-    }
-
-    return input;
+  /**
+   * Only query variables belong in local state
+   * Apollo query results must NOT be copied into React state
+   */
+  const [queryInput, setQueryInput] = useState<ErrandQueryInput>({
+    type,
+    search,
+    pagination: { page, limit },
+    maxDistanceKm,
   });
-
-  const [localErrands, setLocalErrands] = useState<ErrandWithClient[]>([]);
 
   const { data, loading, error, refetch, fetchMore } = useQuery<
     GetErrandsQuery,
     GetErrandsQueryVariables
   >(GET_ERRANDS, {
-    variables: {
-      input: queryInput,
-    },
+    variables: { input: queryInput },
     notifyOnNetworkStatusChange: true,
-    onCompleted: (data) => {
-      if (data?.getErrands?.data) {
-        setLocalErrands(data.getErrands.data as ErrandWithClient[]);
-      }
-    },
   });
 
-  // Subscribe to new errands if enabled
+  /**
+   * Reactive errands array
+   * Updates instantly when cache changes
+   */
+  const errands: ErrandWithClient[] =
+    (data?.getErrands?.data as ErrandWithClient[]) ?? [];
+
+  /**
+   * Subscriptions stay reactive because we do NOT use local state
+   */
   useSubscription<{
     errandCreated: ErrandSubscriptionPayload;
   }>(ERRAND_CREATED_SUBSCRIPTION, {
     skip: !enableSubscriptions,
     onData: ({ data }) => {
-      if (data?.data?.errandCreated) {
-        const newErrand = data.data.errandCreated.errand;
-        // setLocalErrands((prev) => [newErrand, ...prev]);
-      }
+      const newErrand = data?.data?.errandCreated?.errand;
+      if (!newErrand) return;
+
+      // Let Apollo handle cache updates automatically
+      // Or implement cache.modify here if needed
     },
   });
 
+  /**
+   * Pagination
+   */
   const loadMore = async () => {
-    if (!data?.getErrands.hasNextPage) return;
+    if (!data?.getErrands?.hasNextPage) return;
 
-    try {
-      await fetchMore({
-        variables: {
-          input: {
-            ...queryInput,
-            pagination: { page: (queryInput.pagination?.page || 1) + 1, limit },
+    await fetchMore({
+      variables: {
+        input: {
+          ...queryInput,
+          pagination: {
+            page: (queryInput.pagination?.page || 1) + 1,
+            limit,
           },
         },
-        updateQuery: (prev, { fetchMoreResult }) => {
-          if (!fetchMoreResult) return prev;
-          return {
-            getErrands: {
-              ...fetchMoreResult.getErrands,
-              data: [
-                ...prev.getErrands.data,
-                ...fetchMoreResult.getErrands.data,
-              ],
-            },
-          };
-        },
-      });
-    } catch (error) {
-      console.error("Error loading more errands:", error);
-    }
+      },
+      updateQuery: (prev, { fetchMoreResult }) => {
+        if (!fetchMoreResult) return prev;
+
+        return {
+          getErrands: {
+            ...fetchMoreResult.getErrands,
+            data: [
+              ...prev.getErrands.data,
+              ...fetchMoreResult.getErrands.data,
+            ],
+          },
+        };
+      },
+    });
   };
 
-  const refresh = () => {
-    refetch();
-  };
+  /**
+   * Actions
+   */
+  const refresh = () => refetch();
 
-  const searchErrands = async (keyword: string) => {
-    const newInput: ErrandQueryInput = {
+  const searchErrands = (keyword: string) => {
+    setQueryInput({
       type: "SEARCH",
       search: keyword,
       pagination: { page: 1, limit },
       maxDistanceKm,
-    };
-
-    setQueryInput(newInput);
+    });
   };
 
-  const changeTab = async (newType: ErrandQueryInput["type"]) => {
-    const newInput: ErrandQueryInput = {
+  const changeTab = (newType: ErrandQueryInput["type"]) => {
+    setQueryInput({
+      type: newType,
+      search: newType === "SEARCH" ? queryInput.search : undefined,
       pagination: { page: 1, limit },
       maxDistanceKm,
-    };
-
-    if (newType) {
-      newInput.type = newType;
-    }
-
-    if (newType === "SEARCH" && queryInput.search) {
-      newInput.search = queryInput.search;
-    }
-
-    setQueryInput(newInput);
+    });
   };
 
-  const goToPage = async (pageNumber: number) => {
-    const newInput: ErrandQueryInput = {
+  const goToPage = (pageNumber: number) => {
+    setQueryInput({
       ...queryInput,
       pagination: { page: pageNumber, limit },
-    };
-
-    setQueryInput(newInput);
+    });
   };
 
   return {
-    // Data
-    errands: localErrands,
-    total: data?.getErrands?.total || 0,
-    page: data?.getErrands?.page || 1,
-    totalPages: data?.getErrands?.totalPages || 1,
-    hasNextPage: data?.getErrands?.hasNextPage || false,
-    hasPreviousPage: data?.getErrands?.hasPreviousPage || false,
+    // Data (fully reactive)
+    errands,
+    total: data?.getErrands?.total ?? 0,
+    page: data?.getErrands?.page ?? 1,
+    totalPages: data?.getErrands?.totalPages ?? 1,
+    hasNextPage: data?.getErrands?.hasNextPage ?? false,
+    hasPreviousPage: data?.getErrands?.hasPreviousPage ?? false,
 
-    // States
+    // State
     loading,
     error,
 
