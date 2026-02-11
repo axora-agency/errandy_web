@@ -1,6 +1,5 @@
 import React from "react";
-import
-{
+import {
   Card,
   CardContent,
   CardHeader,
@@ -10,24 +9,22 @@ import
 } from "@/components";
 import { Star, MapPin, Bookmark } from "lucide-react";
 import type {
+  ErrandStatus,
   ErrandWithClient,
   SaveErrandMutation,
   SaveErrandMutationVariables,
 } from "@/gql/graphql";
 import { formatDistanceToNow } from "date-fns";
 import { useMutation } from "@apollo/client";
-import { SAVE_ERRAND_MUTATION } from "@/graphql/mutations/errands/save-errand";
 import { useUserStore } from "@/store/userStore";
+import { SAVE_ERRAND_MUTATION } from "@/graphql";
 
-interface ErrandCardBlockProps
-{
+interface ErrandCardBlockProps {
   errand: ErrandWithClient;
 }
 
-const getStatusColor = (status: string) =>
-{
-  switch (status)
-  {
+const getStatusColor = (status: string) => {
+  switch (status) {
     case "OPEN":
       return "bg-green-100 text-green-800";
     case "IN_PROGRESS":
@@ -41,82 +38,72 @@ const getStatusColor = (status: string) =>
   }
 };
 
-const renderStars = (rating: number | null | undefined) =>
-{
+const renderStars = (rating: number | null | undefined) => {
   if (!rating) return null;
   return Array.from({ length: 5 }, (_, i) => (
     <Star
       key={i}
-      className={`h-4 w-4 ${i < Math.floor(rating)
-        ? "fill-yellow-400 text-yellow-400"
-        : "text-gray-300"
-        }`}
+      className={`h-4 w-4 ${
+        i < Math.floor(rating)
+          ? "fill-yellow-400 text-yellow-400"
+          : "text-gray-300"
+      }`}
     />
   ));
 };
 
-const formatBudget = (errand: ErrandWithClient) =>
-{
-  if (errand.pricingType === "FIXED" && errand.price)
-  {
+const formatBudget = (errand: ErrandWithClient) => {
+  if (errand.pricingType === "FIXED" && errand.price) {
     return `₦${errand.price.toLocaleString()}`;
   }
-  if (errand.pricingType === "HOURLY" && errand.hourlyRate)
-  {
+  if (errand.pricingType === "HOURLY" && errand.hourlyRate) {
     return `₦${errand.hourlyRate.toLocaleString()}/hr`;
   }
   return "Budget TBD";
 };
 
-const formatDistance = (distance: number | null | undefined) =>
-{
+const formatDistance = (distance: number | null | undefined) => {
   if (!distance) return null;
   const km = distance / 1000;
-  if (km < 1)
-  {
+  if (km < 1) {
     return `${Math.round(distance)}m away`;
   }
   return `${km.toFixed(1)}km away`;
 };
 
-const ErrandCardBlock: React.FC<ErrandCardBlockProps> = ({ errand }) =>
-{
+const ErrandCardBlock: React.FC<ErrandCardBlockProps> = ({ errand }) => {
   const [saveErrand] = useMutation<
     SaveErrandMutation,
     SaveErrandMutationVariables
   >(SAVE_ERRAND_MUTATION);
-  const { user } = useUserStore()
+  const { user } = useUserStore();
 
-  const handleSaveErrand = async (errandId: string) =>
-  {
+  const handleSaveErrand = async (errandId: string) => {
     await saveErrand({
       variables: { errandId },
       optimisticResponse: {
         __typename: "Mutation",
         saveErrand: {
-          __typename: "SaveErrand",
+          __typename: "SavedErrand",
           id: `saved-${errandId}`,
           errandId,
           userId: user?.id || "",
         },
       },
-      update(cache)
-      {
-        console.log(cache)
+      update(cache) {
+        console.log(cache);
         const errandCacheId = cache.identify({
           __typename: "ErrandWithClient",
           id: errandId,
         });
-
 
         if (!errandCacheId) return;
 
         cache.modify({
           id: errandCacheId,
           fields: {
-            isSaved()
-            {
-              console.log(cache)
+            isSaved() {
+              console.log(cache);
               return true;
             },
           },
@@ -133,14 +120,14 @@ const ErrandCardBlock: React.FC<ErrandCardBlockProps> = ({ errand }) =>
             <div className="flex items-center gap-2 mb-2">
               <CardTitle className="text-lg">{errand.title}</CardTitle>
               <Badge
-                className={getStatusColor(errand.status)}
+                className={getStatusColor(errand.status as ErrandStatus)}
                 variant="secondary"
               >
                 {errand.status}
               </Badge>
-              {errand.workerType && (
+              {errand.providerType && (
                 <Badge variant="outline" className="text-xs">
-                  {errand.workerType}
+                  {errand.providerType}
                 </Badge>
               )}
             </div>
@@ -184,12 +171,7 @@ const ErrandCardBlock: React.FC<ErrandCardBlockProps> = ({ errand }) =>
             )}
             {errand.service && (
               <Badge variant="outline" className="text-xs">
-                {errand.service}
-              </Badge>
-            )}
-            {errand.profession && (
-              <Badge variant="outline" className="text-xs">
-                {errand.profession}
+                {errand.service.name}
               </Badge>
             )}
           </div>
@@ -201,8 +183,7 @@ const ErrandCardBlock: React.FC<ErrandCardBlockProps> = ({ errand }) =>
               disabled={errand?.isSaved || false}
             >
               <Bookmark
-                className={`h-4 w-4 mr-1 ${errand.isSaved ? "fill-white" : ""
-                  }`}
+                className={`h-4 w-4 mr-1 ${errand.isSaved ? "fill-white" : ""}`}
               />
               {errand.isSaved ? "Saved" : "Save"}
             </Button>

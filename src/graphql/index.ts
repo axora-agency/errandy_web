@@ -1,2 +1,3 @@
-export * from './queries'
-export * from './subscriptions';
+export * from "./query";
+export * from "./subscription";
+export * from "./mutation";

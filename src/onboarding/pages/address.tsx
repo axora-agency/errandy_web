@@ -2,23 +2,21 @@ import { useEffect, useRef, useState } from "react";
 import { useOnBoardingStore } from "@/store/onBoardingStore";
 import { Input } from "@/components/ui/input";
 import { useLazyQuery, useMutation } from "@apollo/client";
-import { SUGGEST_ADDRESSES } from "@/graphql/queries/address/suggest-addresses";
-import { PLACE_DETAILS } from "@/graphql/queries/address/place-details";
 import { useUserStore } from "@/store/userStore";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import type {
   AddressSuggestion,
+  GetPlaceDetailsQuery,
+  GetPlaceDetailsQueryVariables,
   SuggestAddressesQuery,
   SuggestAddressesQueryVariables,
-  PlaceDetailsQuery,
-  PlaceDetailsQueryVariables,
   UseCurrentAddressMutation,
   UseCurrentAddressMutationVariables,
 } from "@/gql/graphql";
-import { USE_CURRENT_ADDRESS } from "@/graphql/mutations/user/use-current-address";
 import { getCurrentPosition } from "@/utils";
+import { GET_PLACE_DETAILS, SUGGEST_ADDRESSES, USE_CURRENT_ADDRESS } from "@/graphql";
 
 // Minimal shape for selected place details we care about
 // shape for selected place, now including user-defined label
@@ -46,9 +44,9 @@ export default function OnboardingAddressPage() {
     SuggestAddressesQueryVariables
   >(SUGGEST_ADDRESSES, { fetchPolicy: "no-cache" });
   const [fetchPlaceDetails, { data: placeData }] = useLazyQuery<
-    PlaceDetailsQuery,
-    PlaceDetailsQueryVariables
-  >(PLACE_DETAILS, { fetchPolicy: "no-cache" });
+    GetPlaceDetailsQuery,
+    GetPlaceDetailsQueryVariables
+  >(GET_PLACE_DETAILS, { fetchPolicy: "no-cache" });
 
   const [useCurrentAddress] = useMutation<
     UseCurrentAddressMutation,

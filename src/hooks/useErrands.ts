@@ -1,11 +1,11 @@
-import type {
-  ErrandQueryInput,
-  ErrandSubscriptionPayload,
-  ErrandWithClient,
-  GetErrandsQuery,
-  GetErrandsQueryVariables,
+import {
+  ErrandType,
+  type ErrandQueryInput,
+  type ErrandWithClient,
+  type GetErrandsQuery,
+  type GetErrandsQueryVariables,
 } from "@/gql/graphql";
-import { ERRAND_CREATED_SUBSCRIPTION, GET_ERRANDS } from "@/graphql";
+import { GET_ERRANDS } from "@/graphql";
 import { useQuery, useSubscription } from "@apollo/client";
 import { useState } from "react";
 
@@ -20,7 +20,7 @@ export interface UseErrandsOptions {
 
 export function useErrands(options: UseErrandsOptions = {}) {
   const {
-    type = "FEED",
+    type = ErrandType.Feed,
     search,
     page = 1,
     limit = 10,
@@ -53,22 +53,6 @@ export function useErrands(options: UseErrandsOptions = {}) {
    */
   const errands: ErrandWithClient[] =
     (data?.getErrands?.data as ErrandWithClient[]) ?? [];
-
-  /**
-   * Subscriptions stay reactive because we do NOT use local state
-   */
-  useSubscription<{
-    errandCreated: ErrandSubscriptionPayload;
-  }>(ERRAND_CREATED_SUBSCRIPTION, {
-    skip: !enableSubscriptions,
-    onData: ({ data }) => {
-      const newErrand = data?.data?.errandCreated?.errand;
-      if (!newErrand) return;
-
-      // Let Apollo handle cache updates automatically
-      // Or implement cache.modify here if needed
-    },
-  });
 
   /**
    * Pagination
@@ -109,7 +93,7 @@ export function useErrands(options: UseErrandsOptions = {}) {
 
   const searchErrands = (keyword: string) => {
     setQueryInput({
-      type: "SEARCH",
+      type: ErrandType.Search,
       search: keyword,
       pagination: { page: 1, limit },
       maxDistanceKm,

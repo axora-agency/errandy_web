@@ -3,20 +3,18 @@ import { MapPin, Plus, Search, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/userStore";
 import { useLazyQuery, useMutation } from "@apollo/client";
-import { SUGGEST_ADDRESSES } from "@/graphql/queries/address/suggest-addresses";
-import { PLACE_DETAILS } from "@/graphql/queries/address/place-details";
-import { ADD_USER_ADDRESS } from "@/graphql/mutations/user/add-user-address";
 import { getCurrentPosition } from "@/utils";
 import { toast } from "sonner";
 import type {
+  AddAddressMutation,
+  AddAddressMutationVariables,
   AddressSuggestion,
+  GetPlaceDetailsQuery,
+  GetPlaceDetailsQueryVariables,
   SuggestAddressesQuery,
   SuggestAddressesQueryVariables,
-  PlaceDetailsQuery,
-  PlaceDetailsQueryVariables,
-  SaveUserAddressMutation,
-  SaveUserAddressMutationVariables,
 } from "@/gql/graphql";
+import { ADD_USER_ADDRESS, GET_PLACE_DETAILS, SUGGEST_ADDRESSES } from "@/graphql";
 
 // Selected place for new addresses
 type SelectedPlace = {
@@ -59,9 +57,9 @@ const AddressSelector = () => {
   });
 
   const [fetchPlaceDetails] = useLazyQuery<
-    PlaceDetailsQuery,
-    PlaceDetailsQueryVariables
-  >(PLACE_DETAILS, {
+    GetPlaceDetailsQuery,
+    GetPlaceDetailsQueryVariables
+  >(GET_PLACE_DETAILS, {
     fetchPolicy: "no-cache",
     onCompleted: (data) => {
       if (data?.placeDetails && selectedPlace) {
@@ -81,12 +79,12 @@ const AddressSelector = () => {
   });
 
   const [saveUserAddress] = useMutation<
-    SaveUserAddressMutation,
-    SaveUserAddressMutationVariables
+    AddAddressMutation,
+    AddAddressMutationVariables
   >(ADD_USER_ADDRESS, {
     onCompleted: (data) => {
-      if (data?.saveUserAddress) {
-        setUser(data.saveUserAddress);
+      if (data?.addAddress) {
+        setUser(data.addAddress);
         toast.success("Address saved successfully");
         resetAddressForm();
         setIsOpen(false);

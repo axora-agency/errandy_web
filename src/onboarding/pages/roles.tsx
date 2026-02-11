@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { User, Briefcase, CheckCircle2, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import type { UserRole } from "@/gql/graphql";
+import { UserRole } from "@/gql/graphql";
 import { useOnBoardingStore } from "@/store/onBoardingStore";
 import { useMutation } from "@apollo/client";
-import { CREATE_USER_ROLE } from "@/graphql/mutations/user/create-user-role";
 import { useUserStore } from "@/store/userStore";
+import { CREATE_USER_ROLE } from "@/graphql";
 
 export default function Roles() {
   const [selected, setSelected] = useState<UserRole | null>(null);
@@ -48,9 +48,9 @@ export default function Roles() {
       <motion.article
         layout
         whileHover={{ scale: 1.02 }}
-        onClick={() => handleSelect("CLIENT")}
+        onClick={() => handleSelect(UserRole.Client)}
         className={`${baseClasses} ${
-          selected === "CLIENT" ? selectedClasses : ""
+          selected === UserRole.Client ? selectedClasses : ""
         }`}
         aria-label="Client account card"
       >
@@ -124,9 +124,9 @@ export default function Roles() {
       <motion.article
         layout
         whileHover={{ scale: 1.02 }}
-        onClick={() => handleSelect("WORKER")}
+        onClick={() => handleSelect(UserRole.Provider)}
         className={`${baseClasses} ${
-          selected === "WORKER" ? selectedClasses : ""
+          selected === UserRole.Provider ? selectedClasses : ""
         }`}
         aria-label="Worker account card"
       >
@@ -176,7 +176,7 @@ export default function Roles() {
           <div>
             <h3 className="text-lg font-semibold flex items-center gap-2">
               I want to work (Worker)
-              {selected === "WORKER" && (
+              {selected === UserRole.Provider && (
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
               )}
             </h3>

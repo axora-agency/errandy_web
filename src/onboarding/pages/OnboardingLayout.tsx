@@ -4,18 +4,21 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@apollo/client";
-import { CREATE_USER_ROLE } from "@/graphql/mutations/user/create-user-role";
-import { ADD_WORKER_SERVICES } from "@/graphql/mutations/user/add-worker-services";
-import { ADD_USER_ADDRESS } from "@/graphql/mutations/user/add-user-address";
 import { useUserStore } from "@/store/userStore";
 import { toast } from "sonner";
-import type {
-  AddAddressMutation,
-  AddAddressMutationVariables,
-  SaveUserAddressInput,
+import {
+  UserRole,
+  type AddAddressMutation,
+  type AddAddressMutationVariables,
+  type AddWorkerServicesMutation,
+  type AddWorkerServicesMutationVariables,
+  type CreateUserRoleMutation,
+  type CreateUserRoleMutationVariables,
+  type SaveUserAddressInput,
 } from "@/gql/graphql";
 import CustomLogo from "@/components/custom/Logo";
 import { auth } from "@/lib/auth";
+import { ADD_PROVIDER_SERVICES, ADD_USER_ADDRESS, CREATE_USER_ROLE } from "@/graphql";
 
 export default function OnboardingLayout() {
   const { user } = useUserStore();
@@ -26,21 +29,25 @@ export default function OnboardingLayout() {
   const { selectedAddress } = useOnBoardingStore();
   const setUser = useUserStore((s) => s.setUser);
 
-  const [mutateCreateRole] = useMutation(CREATE_USER_ROLE, {
+  const [mutateCreateRole] = useMutation<
+    CreateUserRoleMutation,
+    CreateUserRoleMutationVariables
+  >(CREATE_USER_ROLE, {
     onCompleted(data) {
       if (data?.createUserRole) setUser(data.createUserRole);
     },
     onError() {},
   });
 
-  const [mutateAddServices, { loading: servicesSubmitting }] = useMutation(
-    ADD_WORKER_SERVICES,
-    {
-      onCompleted(data) {
-        if (data?.addWorkerServices) setUser(data.addWorkerServices);
-      },
-    }
-  );
+  const [mutateAddServices, { loading: servicesSubmitting }] = useMutation<
+    AddWorkerServicesMutation,
+    AddWorkerServicesMutationVariables
+  >(ADD_PROVIDER_SERVICES, {
+    onCompleted(data) {
+      if (data?.addWorkerServices) setUser(data.addWorkerServices);
+    },
+    onError() {},
+  });
 
   const [mutateAddAddress, { loading: addressSubmitting }] = useMutation<
     AddAddressMutation,
@@ -83,7 +90,7 @@ export default function OnboardingLayout() {
     if (locIndex >= 0) return locIndex;
 
     // Map onboardingProgress to step index
-    if (role === "WORKER") {
+    if (role === UserRole.Provider) {
       switch (progress) {
         case "NONE":
           return 0;
@@ -201,7 +208,13 @@ export default function OnboardingLayout() {
                 Hi, {user.name}
               </span>
             )}
-            <Button variant={"destructive"} onClick={handleLogout} className="cursor-pointer">Logout</Button>
+            <Button
+              variant={"destructive"}
+              onClick={handleLogout}
+              className="cursor-pointer"
+            >
+              Logout
+            </Button>
           </div>
         </div>
       </header>
