@@ -13,6 +13,7 @@ const RequireAuth = () => {
   const { data: session, isPending } = auth.useSession();
   const location = useLocation();
   const { setUser } = useUserStore();
+  console.log(session, "User sessions")
 
   const { data, loading } = useQuery<UserQuery, UserQueryVariables>(
     GET_USER,
