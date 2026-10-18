@@ -4,12 +4,12 @@ import { formatDistanceToNow } from "date-fns";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
-import { GET_CLIENT_DASHBOARD } from "@/graphql";
+import { GET_MY_ERRANDS, WALLET_BALANCES } from "@/graphql";
+import type { MyErrandsQuery, WalletBalancesQuery, ErrandDetailType } from "@/gql/graphql";
 import {
   Calendar,
   CheckCircle2,
@@ -19,38 +19,10 @@ import {
   Loader2,
   Mail,
   MapPin,
-  MessageCircle,
-  Plus,
   TrendingUp,
   User,
   Wallet,
 } from "lucide-react";
-
-type DashboardErrand = {
-  id: string;
-  title: string;
-  status: string;
-  createdAt: string;
-  updatedAt?: string | null;
-  completionDeadline?: string | null;
-  service?: { name?: string | null } | null;
-};
-
-type ClientDashboardPayload = {
-  activeErrandsCount: number;
-  draftErrandsCount: number;
-  totalErrandsCount: number;
-  completedErrandsCount: number;
-  totalSpent: number;
-  walletBalance: number;
-  marketTrends: string[];
-  activeErrands: DashboardErrand[];
-  draftErrands: DashboardErrand[];
-};
-
-type ClientDashboardQuery = {
-  clientDashboard: ClientDashboardPayload;
-};
 
 type StatusStyle = {
   label: string;
@@ -71,6 +43,12 @@ const statusStyles: Record<string, StatusStyle> = {
     badge: "bg-blue-100 text-blue-800",
     iconBg: "bg-blue-100",
     iconColor: "text-blue-600",
+  },
+  ASSIGNED: {
+    label: "Assigned",
+    badge: "bg-purple-100 text-purple-800",
+    iconBg: "bg-purple-100",
+    iconColor: "text-purple-600",
   },
   COMPLETED: {
     label: "Completed",
@@ -105,13 +83,12 @@ const getActivityIcon = (status?: string | null) => {
     case "OPEN":
       return MapPin;
     case "IN_PROGRESS":
+    case "ASSIGNED":
       return Clock;
     case "COMPLETED":
       return CheckCircle2;
-    case "DRAFT":
-      return FileText;
     default:
-      return Clock;
+      return FileText;
   }
 };
 
@@ -124,35 +101,44 @@ const formatRelativeTime = (isoDate?: string | null) => {
   return formatDistanceToNow(parsed, { addSuffix: true });
 };
 
-const getErrandTimestamp = (errand: DashboardErrand) => {
-  const raw = errand.updatedAt ?? errand.createdAt;
-  if (!raw) return 0;
-  const parsed = new Date(raw).getTime();
-  return Number.isNaN(parsed) ? 0 : parsed;
-};
-
 export default function DashboardPage() {
   const { data: session } = auth.useSession();
-  const { data, loading, error, refetch } = useQuery<ClientDashboardQuery>(
-    GET_CLIENT_DASHBOARD,
-    { fetchPolicy: "cache-and-network" },
+
+  const {
+    data: errandsData,
+    loading: errandsLoading,
+    error: errandsError,
+    refetch: refetchErrands,
+  } = useQuery<MyErrandsQuery>(GET_MY_ERRANDS, {
+    variables: { role: "CLIENT" },
+    fetchPolicy: "cache-and-network",
+  });
+
+  const {
+    data: walletData,
+    loading: walletLoading,
+  } = useQuery<WalletBalancesQuery>(WALLET_BALANCES, {
+    fetchPolicy: "cache-and-network",
+  });
+
+  const errands: ErrandDetailType[] = errandsData?.myErrands || [];
+  const activeErrands = errands.filter((e) => e.status === "IN_PROGRESS" || e.status === "ASSIGNED");
+  const openErrands = errands.filter((e) => e.status === "OPEN");
+  const completedErrands = errands.filter((e) => e.status === "COMPLETED");
+
+  const totalSpent = completedErrands.reduce(
+    (sum, e) => sum + (e.budget?.amountMinorUnits || 0) / 100,
+    0
   );
+  const walletBalance = (walletData?.walletBalances?.availableMinorUnits || 0) / 100;
 
-  const dashboard = data?.clientDashboard;
-  const activeErrands = dashboard?.activeErrands ?? [];
-  const draftErrands = dashboard?.draftErrands ?? [];
-  const marketTrends = dashboard?.marketTrends ?? [];
-  const recentErrands = [...activeErrands, ...draftErrands]
-    .sort((a, b) => getErrandTimestamp(b) - getErrandTimestamp(a))
-    .slice(0, 3);
+  const recentErrands = [...errands].slice(0, 5);
 
-  const dashboardLoading = loading && !dashboard;
-  const dashboardError = Boolean(error) && !dashboard;
+  const isLoading = (errandsLoading || walletLoading) && errands.length === 0;
 
   return (
-    <div className="min-h-screen ">
-      {/* Main Content */}
-      <main className="">
+    <div className="min-h-screen">
+      <main>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,20 +154,20 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {dashboardLoading && (
+          {isLoading && (
             <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading dashboard data...
             </div>
           )}
 
-          {dashboardError && (
+          {errandsError && (
             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               Unable to load dashboard data.
               <button
                 type="button"
                 className="ml-2 underline"
-                onClick={() => refetch()}
+                onClick={() => refetchErrands()}
               >
                 Retry
               </button>
@@ -208,8 +194,8 @@ export default function DashboardPage() {
                 <div className="flex items-center space-x-3">
                   <Calendar className="h-4 w-4 text-gray-400" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Member Since</p>
-                    <p className="text-sm text-gray-600">January 2024</p>
+                    <p className="text-sm font-medium text-gray-900">Member Status</p>
+                    <p className="text-sm text-gray-600">Verified User</p>
                   </div>
                 </div>
               </div>
@@ -224,23 +210,19 @@ export default function DashboardPage() {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {dashboard?.activeErrandsCount ?? 0}
-                </div>
-                <p className="text-xs text-muted-foreground">In progress</p>
+                <div className="text-2xl font-bold">{activeErrands.length}</div>
+                <p className="text-xs text-muted-foreground">In progress & assigned</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Draft Errands</CardTitle>
+                <CardTitle className="text-sm font-medium">Open Errands</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {dashboard?.draftErrandsCount ?? 0}
-                </div>
-                <p className="text-xs text-muted-foreground">Awaiting publish</p>
+                <div className="text-2xl font-bold">{openErrands.length}</div>
+                <p className="text-xs text-muted-foreground">Awaiting workers</p>
               </CardContent>
             </Card>
 
@@ -250,9 +232,7 @@ export default function DashboardPage() {
                 <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {dashboard?.completedErrandsCount ?? 0}
-                </div>
+                <div className="text-2xl font-bold">{completedErrands.length}</div>
                 <p className="text-xs text-muted-foreground">Finished errands</p>
               </CardContent>
             </Card>
@@ -263,16 +243,14 @@ export default function DashboardPage() {
                 <Layers className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {dashboard?.totalErrandsCount ?? 0}
-                </div>
+                <div className="text-2xl font-bold">{errands.length}</div>
                 <p className="text-xs text-muted-foreground">All time</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Financials and Trends */}
-          <div className="grid lg:grid-cols-3 gap-6 mb-8">
+          {/* Financials */}
+          <div className="grid lg:grid-cols-2 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
@@ -280,7 +258,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(dashboard?.totalSpent ?? 0)}
+                  {formatCurrency(totalSpent)}
                 </div>
                 <p className="text-xs text-muted-foreground">Completed errands</p>
               </CardContent>
@@ -293,143 +271,54 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(dashboard?.walletBalance ?? 0)}
+                  {formatCurrency(walletBalance)}
                 </div>
                 <p className="text-xs text-muted-foreground">Available balance</p>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Market Trends</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {marketTrends.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {marketTrends.map((trend) => (
-                      <span
-                        key={trend}
-                        className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700"
-                      >
-                        {trend}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">No trends yet</p>
-                )}
-              </CardContent>
-            </Card>
           </div>
 
-          {/* Quick Actions */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Plus className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Post Errand</p>
-                    <p className="text-sm text-gray-600">Create a new task</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <MessageCircle className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Messages</p>
-                    <p className="text-sm text-gray-600">View conversations</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Wallet className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Wallet</p>
-                    <p className="text-sm text-gray-600">Manage funds</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">History</p>
-                    <p className="text-sm text-gray-600">Past errands</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Activity */}
+          {/* Recent Errands Activity */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                Your latest errands and interactions
-              </CardDescription>
+              <CardTitle>Recent Errands</CardTitle>
             </CardHeader>
             <CardContent>
-              {recentErrands.length > 0 ? (
-                <div className="space-y-4">
+              {recentErrands.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No recent errands found. Click "Create Errand" to get started.
+                </p>
+              ) : (
+                <div className="divide-y divide-border">
                   {recentErrands.map((errand) => {
-                    const statusStyle = getStatusStyle(errand.status);
-                    const ActivityIcon = getActivityIcon(errand.status);
+                    const style = getStatusStyle(errand.status);
+                    const Icon = getActivityIcon(errand.status);
                     return (
                       <div
                         key={errand.id}
-                        className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg"
+                        className="py-3 flex items-center justify-between"
                       >
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center ${statusStyle.iconBg}`}
-                        >
-                          <ActivityIcon
-                            className={`h-5 w-5 ${statusStyle.iconColor}`}
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">
-                            {errand.title}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {formatRelativeTime(
-                              errand.updatedAt ?? errand.createdAt,
-                            )}
-                          </p>
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 rounded-lg ${style.iconBg}`}>
+                            <Icon className={`h-4 w-4 ${style.iconColor}`} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">
+                              {errand.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatRelativeTime(errand.createdAt)}
+                            </p>
+                          </div>
                         </div>
                         <span
-                          className={`px-2 py-1 text-xs rounded-full ${statusStyle.badge}`}
+                          className={`text-xs px-2.5 py-1 rounded-full font-medium ${style.badge}`}
                         >
-                          {statusStyle.label}
+                          {style.label}
                         </span>
                       </div>
                     );
                   })}
-                </div>
-              ) : (
-                <div className="rounded-lg border border-dashed border-gray-200 p-6 text-sm text-gray-500">
-                  No recent errands yet.
                 </div>
               )}
             </CardContent>

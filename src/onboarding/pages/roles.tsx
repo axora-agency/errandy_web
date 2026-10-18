@@ -1,34 +1,15 @@
 import { useState } from "react";
-import { User, Briefcase, CheckCircle2, Loader2 } from "lucide-react";
+import { User, Briefcase, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { UserRole } from "@/gql/graphql";
+import type { UserRole } from "@/store/userStore";
 import { useOnBoardingStore } from "@/store/onBoardingStore";
-import { useMutation } from "@apollo/client";
-import { useUserStore } from "@/store/userStore";
-import { CREATE_USER_ROLE } from "@/graphql";
 
 export default function Roles() {
-  const [selected, setSelected] = useState<UserRole | null>(null);
-  const { setPendingRole } = useOnBoardingStore();
-  const setUser = useUserStore((s) => s.setUser);
-
-  const [mutateCreateRole, { loading: submitting }] = useMutation(
-    CREATE_USER_ROLE,
-    {
-      onCompleted(data) {
-        if (data?.createUserRole) {
-          setUser(data.createUserRole);
-        }
-      },
-      onError() {
-        // error handling via toast elsewhere if needed
-      },
-    }
-  );
+  const { pendingRole, setPendingRole } = useOnBoardingStore();
+  const [selected, setSelected] = useState<UserRole | null>(pendingRole || "CLIENT");
 
   const handleSelect = (role: UserRole) => {
     setSelected(role);
-    // store pending role in user store; submission happens on Next
     setPendingRole(role);
   };
 
@@ -38,67 +19,16 @@ export default function Roles() {
 
   return (
     <div className="relative max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-      {submitting && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-sm">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        </div>
-      )}
-
       {/* Client Card */}
       <motion.article
         layout
         whileHover={{ scale: 1.02 }}
-        onClick={() => handleSelect(UserRole.Client)}
+        onClick={() => handleSelect("CLIENT")}
         className={`${baseClasses} ${
-          selected === UserRole.Client ? selectedClasses : ""
+          selected === "CLIENT" ? selectedClasses : ""
         }`}
         aria-label="Client account card"
       >
-        {/* Decorative 3D-ish SVG */}
-        <div className="absolute -right-8 -top-8 opacity-80 pointer-events-none">
-          <svg
-            width="160"
-            height="160"
-            viewBox="0 0 160 160"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <defs>
-              <linearGradient id="gClient" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.95" />
-                <stop offset="100%" stopColor="#7c3aed" stopOpacity="0.9" />
-              </linearGradient>
-              <filter id="fClient" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow
-                  dx="0"
-                  dy="8"
-                  stdDeviation="18"
-                  floodOpacity="0.15"
-                />
-              </filter>
-            </defs>
-
-            <g filter="url(#fClient)">
-              <ellipse
-                cx="80"
-                cy="80"
-                rx="64"
-                ry="36"
-                fill="url(#gClient)"
-                transform="rotate(-20 80 80)"
-              />
-              <ellipse
-                cx="95"
-                cy="60"
-                rx="34"
-                ry="20"
-                fill="#ffffff22"
-                transform="rotate(-10 95 60)"
-              />
-            </g>
-          </svg>
-        </div>
-
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-sky-400 to-violet-600 flex items-center justify-center shadow-lg">
             <User className="w-7 h-7 text-white drop-shadow-sm" />
@@ -124,50 +54,12 @@ export default function Roles() {
       <motion.article
         layout
         whileHover={{ scale: 1.02 }}
-        onClick={() => handleSelect(UserRole.Provider)}
+        onClick={() => handleSelect("PROVIDER")}
         className={`${baseClasses} ${
-          selected === UserRole.Provider ? selectedClasses : ""
+          selected === "PROVIDER" ? selectedClasses : ""
         }`}
         aria-label="Worker account card"
       >
-        <div className="absolute -left-8 -bottom-8 opacity-90 pointer-events-none">
-          <svg
-            width="120"
-            height="120"
-            viewBox="0 0 160 160"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <defs>
-              <linearGradient id="gWorker" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#34d399" stopOpacity="0.5" />
-                <stop offset="80%" stopColor="#059669" stopOpacity="0.5" />
-              </linearGradient>
-              <filter id="fWorker" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow
-                  dx="0"
-                  dy="8"
-                  stdDeviation="18"
-                  floodOpacity="0.12"
-                />
-              </filter>
-            </defs>
-
-            <g filter="url(#fWorker)">
-              <rect
-                x="30"
-                y="40"
-                width="100"
-                height="70"
-                rx="30"
-                fill="url(#gWorker)"
-                transform="rotate(14 80 75)"
-              />
-              <circle cx="90" cy="50" r="20" fill="#ffffff22" />
-            </g>
-          </svg>
-        </div>
-
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center shadow-lg">
             <Briefcase className="w-7 h-7 text-white drop-shadow-sm" />
@@ -176,7 +68,7 @@ export default function Roles() {
           <div>
             <h3 className="text-lg font-semibold flex items-center gap-2">
               I want to work (Worker)
-              {selected === UserRole.Provider && (
+              {selected === "PROVIDER" && (
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
               )}
             </h3>

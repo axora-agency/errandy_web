@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Onboarding from "./pages/roles";
 import OnboardingLayout from "./pages/OnboardingLayout";
 import Services from "./pages/serviceType";

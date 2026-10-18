@@ -1,4 +1,3 @@
-// ...existing imports...
 import { useOnBoardingStore } from "@/store/onBoardingStore";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useMemo } from "react";
@@ -7,154 +6,156 @@ import { useMutation } from "@apollo/client";
 import { useUserStore } from "@/store/userStore";
 import { toast } from "sonner";
 import {
-  UserRole,
-  type AddAddressMutation,
-  type AddAddressMutationVariables,
-  type AddWorkerServicesMutation,
-  type AddWorkerServicesMutationVariables,
-  type CreateUserRoleMutation,
-  type CreateUserRoleMutationVariables,
-  type SaveUserAddressInput,
+  type AddProviderRoleMutation,
+  type AddProviderRoleMutationVariables,
+  type UpdateProviderRoleMutation,
+  type UpdateProviderRoleMutationVariables,
+  type CreateAddressMutation,
+  type CreateAddressMutationVariables,
 } from "@/gql/graphql";
 import CustomLogo from "@/components/custom/Logo";
 import { auth } from "@/lib/auth";
-import { ADD_PROVIDER_SERVICES, ADD_USER_ADDRESS, CREATE_USER_ROLE } from "@/graphql";
+import {
+  ADD_PROVIDER_ROLE,
+  UPDATE_PROVIDER_ROLE,
+  CREATE_ADDRESS,
+} from "@/graphql";
 
 export default function OnboardingLayout() {
-  const { user } = useUserStore();
+  const { user, updateUser } = useUserStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const { selectedServicesArray } = useOnBoardingStore();
-  const { pendingRole } = useOnBoardingStore();
-  const { selectedAddress } = useOnBoardingStore();
-  const setUser = useUserStore((s) => s.setUser);
+  const { selectedServicesArray, pendingRole, selectedAddress } = useOnBoardingStore();
 
-  const [mutateCreateRole] = useMutation<
-    CreateUserRoleMutation,
-    CreateUserRoleMutationVariables
-  >(CREATE_USER_ROLE, {
+  const [mutateAddProviderRole, { loading: roleSubmitting }] = useMutation<
+    AddProviderRoleMutation,
+    AddProviderRoleMutationVariables
+  >(ADD_PROVIDER_ROLE, {
     onCompleted(data) {
-      if (data?.createUserRole) setUser(data.createUserRole);
-    },
-    onError() {},
-  });
-
-  const [mutateAddServices, { loading: servicesSubmitting }] = useMutation<
-    AddWorkerServicesMutation,
-    AddWorkerServicesMutationVariables
-  >(ADD_PROVIDER_SERVICES, {
-    onCompleted(data) {
-      if (data?.addWorkerServices) setUser(data.addWorkerServices);
-    },
-    onError() {},
-  });
-
-  const [mutateAddAddress, { loading: addressSubmitting }] = useMutation<
-    AddAddressMutation,
-    AddAddressMutationVariables
-  >(ADD_USER_ADDRESS, {
-    onCompleted(data) {
-      if (data?.addAddress) setUser(data.addAddress);
+      if (data?.addProviderRole) {
+        updateUser({
+          hasProviderRole: true,
+          activeRole: "PROVIDER",
+        });
+      }
     },
     onError(err) {
-      console.error("add address error", err);
-      toast.error("Failed to save address");
+      console.error("Add provider role error:", err);
+      toast.error(err.message || "Failed to set provider role");
     },
   });
 
-  const submitRole = (role: any) => mutateCreateRole({ variables: { role } });
-  const submitServices = (dto: any) =>
-    mutateAddServices({ variables: { dto } });
+  const [mutateUpdateServices, { loading: servicesSubmitting }] = useMutation<
+    UpdateProviderRoleMutation,
+    UpdateProviderRoleMutationVariables
+  >(UPDATE_PROVIDER_ROLE, {
+    onCompleted(data) {
+      if (data?.updateProviderRole) {
+        updateUser({
+          skills: data.updateProviderRole.skills,
+        });
+      }
+    },
+    onError(err) {
+      console.error("Update services error:", err);
+      toast.error(err.message || "Failed to save skills");
+    },
+  });
 
-  // 👇 Define your dynamic steps based on role + onboarding progress
+  const [mutateCreateAddress, { loading: addressSubmitting }] = useMutation<
+    CreateAddressMutation,
+    CreateAddressMutationVariables
+  >(CREATE_ADDRESS, {
+    onCompleted() {
+      toast.success("Address saved");
+    },
+    onError(err) {
+      console.error("Create address error:", err);
+      toast.error(err.message || "Failed to save address");
+    },
+  });
+
   const role = user?.activeRole;
-  const progress = user?.onboardingProgress;
 
   const steps = useMemo(() => {
-    if (role === "CLIENT") return ["/onboarding/role"];
+    if (role === "CLIENT" || pendingRole === "CLIENT") return ["/onboarding/role"];
 
-    // Worker flow: always show full step sequence but we'll derive current index from progress
     return [
       "/onboarding/role",
       "/onboarding/services",
       "/onboarding/address",
       "/onboarding/completed",
     ];
-  }, [role]);
+  }, [role, pendingRole]);
 
-  // Find current step index
-  // Determine current step index either from location or from onboardingProgress
   const currentStep = (() => {
-    // Prefer location if user is on an onboarding route
     const locIndex = steps.findIndex((s) => location.pathname.includes(s));
     if (locIndex >= 0) return locIndex;
-
-    // Map onboardingProgress to step index
-    if (role === UserRole.Provider) {
-      switch (progress) {
-        case "NONE":
-          return 0;
-        case "ROLE_SELECTED":
-          return 1; // treat role selected as landed on services step
-        case "SERVICES_SELECTED":
-        case "ADDRESS_ADDED":
-          return 1; // services
-        case "COMPLETED":
-          return steps.length - 1;
-        default:
-          return 0;
-      }
-    }
-
     return 0;
   })();
 
   const progressPercent = ((currentStep + 1) / steps.length) * 100;
 
-  const goNext = () => {
+  const goNext = async () => {
     if (currentStep < steps.length - 1) {
-      // If we're on the first step (role selection) and user is a worker flow,
-      // submit the selected role before navigating.
       const nextPath = steps[currentStep + 1];
+
+      // Step 1: Role Selection
       if (steps[currentStep] === "/onboarding/role") {
         if (!pendingRole) {
-          // nothing selected, don't navigate forward
           toast.error("Please select a role to continue");
           return;
         }
-        submitRole(pendingRole)
-          .then((data) => {
-            if (data.data) {
-              navigate(nextPath);
-            }
-          })
-          .catch((err) => {
-            // submitRole already shows a toast, but ensure we don't navigate
-            console.error("submitRole error", err);
-          });
+
+        if (pendingRole === "CLIENT") {
+          updateUser({ activeRole: "CLIENT" });
+          navigate("/client/dashboard");
+          return;
+        }
+
+        // Provider/Worker selected
+        if (!user?.hasProviderRole && user?.partyId) {
+          try {
+            await mutateAddProviderRole({
+              variables: { partyId: user.partyId },
+            });
+          } catch {
+            return;
+          }
+        }
+        navigate(nextPath);
         return;
       }
 
-      // If we're on services step, submit selected services before navigating
+      // Step 2: Services Selection
       if (steps[currentStep] === "/onboarding/services") {
         if (!selectedServicesArray || selectedServicesArray.length === 0) {
           toast.error("Please select at least one service to continue");
           return;
         }
 
-        // Prevent double submission
         if (servicesSubmitting) return;
 
-        submitServices({ serviceIds: selectedServicesArray })
-          .then((res) => {
-            if (res.data) navigate(nextPath);
-          })
-          .catch((err) => {
-            console.error("submitServices error", err);
-          });
+        if (user?.partyId) {
+          try {
+            await mutateUpdateServices({
+              variables: {
+                partyId: user.partyId,
+                input: {
+                  skills: selectedServicesArray,
+                  addToSkills: true,
+                },
+              },
+            });
+          } catch {
+            return;
+          }
+        }
+        navigate(nextPath);
         return;
       }
 
+      // Step 3: Address Selection
       if (steps[currentStep] === "/onboarding/address") {
         if (!selectedAddress) {
           toast.error("Please select an address to continue");
@@ -163,23 +164,30 @@ export default function OnboardingLayout() {
 
         if (addressSubmitting) return;
 
-        const dto: SaveUserAddressInput = {
-          label: selectedAddress.label || "",
-          address: selectedAddress.address,
-          latitude: selectedAddress.latitude as number,
-          longitude: selectedAddress.longitude as number,
-        };
-
-        mutateAddAddress({ variables: { dto } })
-          .then((res) => {
-            if (res.data) navigate(nextPath);
-          })
-          .catch((err) => {
-            console.error("mutateAddAddress error", err);
+        try {
+          await mutateCreateAddress({
+            variables: {
+              input: {
+                label: selectedAddress.label || "Primary",
+                street: selectedAddress.address,
+                city: "Lagos",
+                state: "Lagos",
+                country: "Nigeria",
+                coordinates: {
+                  latitude: selectedAddress.latitude || 6.5244,
+                  longitude: selectedAddress.longitude || 3.3792,
+                },
+              },
+            },
           });
+        } catch {
+          return;
+        }
 
+        navigate(nextPath);
         return;
       }
+
       navigate(nextPath);
     }
   };
@@ -195,6 +203,8 @@ export default function OnboardingLayout() {
       navigate("/auth/login");
     });
   };
+
+  const isSubmitting = roleSubmitting || servicesSubmitting || addressSubmitting;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -219,7 +229,7 @@ export default function OnboardingLayout() {
         </div>
       </header>
 
-      {/* Scrollable main area (leave space for header and footer) */}
+      {/* Scrollable main area */}
       <main className="flex-1 overflow-auto pt-20 pb-36">
         <div className="max-w-5xl mx-auto px-5">
           <Outlet />
@@ -240,15 +250,15 @@ export default function OnboardingLayout() {
             <Button
               onClick={goPrev}
               variant={"secondary"}
-              disabled={currentStep === 0}
+              disabled={currentStep === 0 || isSubmitting}
             >
               Prev
             </Button>
             <Button
               onClick={goNext}
-              disabled={currentStep === steps.length - 1}
+              disabled={currentStep === steps.length - 1 || isSubmitting}
             >
-              Next
+              {isSubmitting ? "Saving..." : "Next"}
             </Button>
           </div>
         </div>

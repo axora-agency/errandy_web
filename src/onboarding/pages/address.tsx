@@ -1,255 +1,186 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useOnBoardingStore } from "@/store/onBoardingStore";
 import { Input } from "@/components/ui/input";
-import { useLazyQuery, useMutation } from "@apollo/client";
-import { useUserStore } from "@/store/userStore";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import type {
-  AddressSuggestion,
-  GetPlaceDetailsQuery,
-  GetPlaceDetailsQueryVariables,
-  SuggestAddressesQuery,
-  SuggestAddressesQueryVariables,
-  UseCurrentAddressMutation,
-  UseCurrentAddressMutationVariables,
-} from "@/gql/graphql";
+import { useMutation } from "@apollo/client";
+import { CREATE_ADDRESS } from "@/graphql";
+import type { CreateAddressMutation, CreateAddressMutationVariables } from "@/gql/graphql";
 import { getCurrentPosition } from "@/utils";
-import { GET_PLACE_DETAILS, SUGGEST_ADDRESSES, USE_CURRENT_ADDRESS } from "@/graphql";
-
-// Minimal shape for selected place details we care about
-// shape for selected place, now including user-defined label
-type SelectedPlace = {
-  description: string;
-  placeId: string;
-  label?: string;
-  lat?: number;
-  lng?: number;
-};
-
-// suggestions come from backend now
+import { MapPin, Navigation, CheckCircle2 } from "lucide-react";
 
 export default function OnboardingAddressPage() {
-  const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<Array<any>>([]);
-  const [selected, setSelected] = useState<SelectedPlace | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [label, setLabel] = useState("Home");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("Lagos");
+  const [state, setState] = useState("Lagos");
+  const [country] = useState("Nigeria");
+  const [latitude, setLatitude] = useState<number | null>(6.5244);
+  const [longitude, setLongitude] = useState<number | null>(3.3792);
+  const [locating, setLocating] = useState(false);
+
   const setSelectedAddress = useOnBoardingStore((s) => s.setSelectedAddress);
-  const setUser = useUserStore((s) => s.setUser);
   const navigate = useNavigate();
 
-  const [fetchSuggestions, { data: suggestData }] = useLazyQuery<
-    SuggestAddressesQuery,
-    SuggestAddressesQueryVariables
-  >(SUGGEST_ADDRESSES, { fetchPolicy: "no-cache" });
-  const [fetchPlaceDetails, { data: placeData }] = useLazyQuery<
-    GetPlaceDetailsQuery,
-    GetPlaceDetailsQueryVariables
-  >(GET_PLACE_DETAILS, { fetchPolicy: "no-cache" });
-
-  const [useCurrentAddress] = useMutation<
-    UseCurrentAddressMutation,
-    UseCurrentAddressMutationVariables
-  >(USE_CURRENT_ADDRESS, {
-    onCompleted(d) {
-      if (d?.useCurrentAddress) {
-        setUser(d.useCurrentAddress);
-        toast.success("Address saved");
-        navigate("/onboarding/completed");
-      }
+  const [createAddress, { loading: saving }] = useMutation<
+    CreateAddressMutation,
+    CreateAddressMutationVariables
+  >(CREATE_ADDRESS, {
+    onCompleted() {
+      toast.success("Address saved successfully");
+      navigate("/onboarding/completed");
     },
     onError(err) {
-      console.error(err);
-      toast.error("Failed to save address");
+      console.error("Failed to save address:", err);
+      toast.error(err.message || "Failed to save address");
     },
   });
-  const [savingCurrent, setSavingCurrent] = useState(false);
 
-  // fetch backend suggestions when query changes
-  useEffect(() => {
-    if (!query || query.length < 2) {
-      setSuggestions([]);
+  const handleUseCurrentLocation = async () => {
+    setLocating(true);
+    try {
+      const pos = await getCurrentPosition();
+      setLatitude(pos.coords.latitude);
+      setLongitude(pos.coords.longitude);
+      if (!street) {
+        setStreet("Current Device Location");
+      }
+      setSelectedAddress({
+        address: street || "Current Device Location",
+        label,
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      });
+      toast.success("Location detected!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not get your location. Please enter manually.");
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  const handleSaveAndContinue = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!street.trim()) {
+      toast.error("Please enter your street address");
       return;
     }
 
-    fetchSuggestions({
+    const lat = latitude || 6.5244;
+    const lng = longitude || 3.3792;
+
+    setSelectedAddress({
+      address: street,
+      label,
+      latitude: lat,
+      longitude: lng,
+    });
+
+    createAddress({
       variables: {
         input: {
-          input: query,
+          label,
+          street,
+          city,
+          state,
+          country,
+          coordinates: {
+            latitude: lat,
+            longitude: lng,
+          },
         },
       },
     });
-  }, [query]);
-
-  useEffect(() => {
-    if (suggestData?.suggestAddresses) {
-      setSuggestions(suggestData.suggestAddresses || []);
-    }
-  }, [suggestData]);
-
-  const pickSuggestion = (s: AddressSuggestion) => {
-    const placeId = s.placeId;
-    const description = s.description;
-    const label = selected?.label || "";
-    setSelected({ description, placeId, label });
-    setQuery(description);
-    setSuggestions([]);
-    setSelectedAddress({ address: description, label });
-    fetchPlaceDetails({ variables: { input: { placeId } } });
   };
-  useEffect(() => {
-    if (placeData?.placeDetails && selected) {
-      const { formattedAddress, latitude, longitude } = placeData.placeDetails;
-      const label = selected.label || "";
-      const updated: SelectedPlace = {
-        description: formattedAddress,
-        placeId: selected.placeId,
-        label,
-        lat: latitude,
-        lng: longitude,
-      };
-      setSelected(updated);
-      setSelectedAddress({
-        address: formattedAddress,
-        label,
-        latitude,
-        longitude,
-      });
-    }
-  }, [placeData]);
-
-  const handleUseCurrentLocation = async () => {
-    setSavingCurrent(true);
-    try {
-      const pos = await getCurrentPosition();
-      const latitude = pos.coords.latitude;
-      const longitude = pos.coords.longitude;
-      // call backend mutation with real coords
-      await useCurrentAddress({
-        variables: { input: { latitude, longitude } },
-      });
-    } catch (error) {
-      console.error(error);
-      toast.error("Unable to access current location");
-    } finally {
-      setSavingCurrent(false);
-    }
-  };
-
-  // address persistence is handled by OnboardingLayout's Next button
 
   return (
-    <div className="py-8">
-      <h2 className="text-2xl font-semibold mb-4">Add your address</h2>
-      <p className="text-sm text-gray-600 mb-6">
-        Start typing and choose your address.
-      </p>
-
-      <div className="max-w-xl bg-white border rounded-lg p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <Input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setSelected(null);
-            }}
-            placeholder="Search address"
-          />
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setQuery("");
-              setSuggestions([]);
-            }}
-          >
-            Clear
-          </Button>
-        </div>
-
-        <div className="mt-4 flex items-center justify-between">
-          <div className="text-sm text-gray-600">Or</div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleUseCurrentLocation}
-            disabled={savingCurrent}
-          >
-            {savingCurrent
-              ? "Registering location..."
-              : "Use my current location"}
-          </Button>
-        </div>
-
-        {!selected && (
-          <div className="mt-4">
-            {suggestions.length > 0 ? (
-              <ul className="divide-y rounded overflow-hidden border bg-white">
-                {suggestions.map((s: AddressSuggestion) => (
-                  <li key={s.placeId}>
-                    <button
-                      onClick={() => pickSuggestion(s)}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-50"
-                      type="button"
-                    >
-                      <div className="text-sm font-medium">{s.description}</div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-sm text-gray-500">
-                No suggestions yet. Start typing above.
-              </div>
-            )}
-          </div>
-        )}
-
-        {selected && (
-          <div className="mt-4 border-t pt-3">
-            <div className="text-sm font-medium">Selected</div>
-            <div className="text-sm text-gray-700">{selected.description}</div>
-            {selected.lat && selected.lng && (
-              <div className="text-xs text-gray-500 mt-1">
-                {selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}
-              </div>
-            )}
-            <div>
-              <label
-                htmlFor="address-label"
-                className="block text-sm font-medium text-gray-700 mt-5"
-              >
-                Label (e.g., Home, Office)
-              </label>
-              <Input
-                id="address-label"
-                className="mt-1"
-                value={selected?.label || ""}
-                onChange={(e) => {
-                  const label = e.target.value;
-                  // update local selected state for controlled input
-                  setSelected((prev) =>
-                    prev ? { ...prev, label } : prev
-                  );
-                  // persist label and existing details to store
-                  if (selected) {
-                    setSelectedAddress({
-                      address: selected.description,
-                      label,
-                      latitude: selected.lat,
-                      longitude: selected.lng,
-                    });
-                  }
-                }}
-                placeholder="Label your address"
-              />
-            </div>
-          </div>
-        )}
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold">Where are you located?</h1>
+        <p className="text-muted-foreground">
+          Enter your primary operating address to find nearby errands and jobs.
+        </p>
       </div>
+
+      <form onSubmit={handleSaveAndContinue} className="space-y-5 bg-card p-6 rounded-2xl border border-border shadow-sm">
+        <div>
+          <label className="text-sm font-medium">Address Label</label>
+          <div className="flex gap-2 mt-1.5">
+            {["Home", "Work", "Shop", "Office"].map((tag) => (
+              <Button
+                key={tag}
+                type="button"
+                variant={label === tag ? "default" : "outline"}
+                size="sm"
+                onClick={() => setLabel(tag)}
+              >
+                {label === tag && <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
+                {tag}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium">Street Address</label>
+          <div className="relative mt-1.5">
+            <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={street}
+              onChange={(e) => {
+                setStreet(e.target.value);
+                setSelectedAddress({
+                  address: e.target.value,
+                  label,
+                  latitude,
+                  longitude,
+                });
+              }}
+              placeholder="e.g. 15 Admiralty Way, Lekki Phase 1"
+              className="pl-9"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium">City</label>
+            <Input
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              className="mt-1.5"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">State</label>
+            <Input
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              className="mt-1.5"
+            />
+          </div>
+        </div>
+
+        <div className="pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-2"
+            onClick={handleUseCurrentLocation}
+            disabled={locating}
+          >
+            <Navigation className="w-4 h-4" />
+            {locating ? "Detecting location..." : "Use Current GPS Location"}
+          </Button>
+        </div>
+
+        <Button type="submit" className="w-full" disabled={saving}>
+          {saving ? "Saving Address..." : "Save Address & Complete"}
+        </Button>
+      </form>
     </div>
   );
 }

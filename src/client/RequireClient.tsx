@@ -5,13 +5,12 @@ const RequireClient = () => {
   const location = useLocation();
   const { user } = useUserStore();
 
-  // Check if user has client role
-  if (user?.activeRole === "CLIENT") {
+  // Check if user has client role or activeRole is CLIENT
+  if (user?.activeRole === "CLIENT" || user?.hasClientRole) {
     return <Outlet />;
   }
 
-  // If user has worker role, redirect to error page
-  if (user?.activeRole === "WORKER") {
+  if (user?.activeRole === "PROVIDER" || user?.activeRole === "WORKER") {
     return (
       <Navigate
         to="/error/client-required"
@@ -21,7 +20,6 @@ const RequireClient = () => {
     );
   }
 
-  // If no role is set, redirect to onboarding
   return <Navigate to="/onboarding/role" state={{ from: location }} replace />;
 };
 

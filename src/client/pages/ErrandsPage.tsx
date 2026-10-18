@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
 import {
-  type GetMyErrandsQuery,
-  type GetMyErrandsQueryVariables,
-  type ErrandWithClient,
+  type MyErrandsQuery,
+  type MyErrandsQueryVariables,
 } from "@/gql/graphql";
-import { GET_MY_ERRANDS } from "@/graphql/query/errand/getMyErrands.query.gql";
+import { GET_MY_ERRANDS } from "@/graphql";
 import { useUserStore } from "@/store/userStore";
 import { CLIENT_TABS, PROVIDER_TABS } from "../config/myErrandsTabConfig";
 import { ErrandCard, EmptyStateContent } from "../components";
@@ -16,26 +15,24 @@ import { Loader2, AlertCircle, Plus } from "lucide-react";
 const ErrandsPage = () => {
   const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
-  const isProvider = user?.activeRole === "PROVIDER";
+  const isProvider = user?.activeRole === "PROVIDER" || user?.activeRole === "WORKER";
   const tabs = isProvider ? PROVIDER_TABS : CLIENT_TABS;
 
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const activeTab = tabs[activeTabIndex];
 
   const { data, loading, error, refetch } = useQuery<
-    GetMyErrandsQuery,
-    GetMyErrandsQueryVariables
+    MyErrandsQuery,
+    MyErrandsQueryVariables
   >(GET_MY_ERRANDS, {
     variables: {
-      input: {
-        type: activeTab.type,
-        pagination: { page: 1, limit: 20 },
-      },
+      role: isProvider ? "PROVIDER" : "CLIENT",
+      status: activeTab.status,
     },
     fetchPolicy: "cache-and-network",
   });
 
-  const errands = data?.getMyErrands?.data || [];
+  const errands = data?.myErrands || [];
 
   const handleErrandPress = (errandId: string) => {
     navigate(`/errands/${errandId}`);
@@ -104,7 +101,7 @@ const ErrandsPage = () => {
                 {errands.map((errand) => (
                   <ErrandCard
                     key={errand.id}
-                    errand={errand as ErrandWithClient}
+                    errand={errand}
                     onPress={() => handleErrandPress(errand.id)}
                     isProvider={isProvider}
                   />
@@ -130,3 +127,4 @@ const ErrandsPage = () => {
 };
 
 export default ErrandsPage;
+export { ErrandsPage };

@@ -1,4 +1,3 @@
-import React from "react";
 import { useQuery } from "@apollo/client";
 import { motion } from "framer-motion";
 import { Briefcase, Wrench, CheckCircle2, Loader2 } from "lucide-react";
@@ -10,18 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { GET_SERVICES } from "@/graphql";
+import { CATEGORY_TREE } from "@/graphql";
 import { useOnBoardingStore } from "@/store/onBoardingStore";
+import type { CategoryTreeQuery } from "@/gql/graphql";
 
 const ServiceCategoryType = {
   CASUAL: "CASUAL",
   PROFESSIONAL: "PROFESSIONAL",
 } as const;
-type ServiceCategoryType = (typeof ServiceCategoryType)[keyof typeof ServiceCategoryType];
-import type {
-  ServiceCategoriesQuery,
-  ServiceCategoriesQueryVariables,
-} from "@/gql/graphql";
 
 export default function ServiceType() {
   const {
@@ -33,50 +28,16 @@ export default function ServiceType() {
     selectedServicesCount,
   } = useOnBoardingStore();
 
-  const isServiceSelected = (id?: string) => Boolean(id && selectedServices?.[id]);
+  const isServiceSelected = (id: string) => Boolean(selectedServices?.[id]);
 
-
-  // No local mutation here; OnboardingLayout will perform submit via store or inline mutation
-
-  // Query for getting services based on category
-  const {
-    data: servicesData,
-    loading: servicesLoading,
-    refetch,
-  } = useQuery<ServiceCategoriesQuery, ServiceCategoriesQueryVariables>(
-  GET_SERVICES,
-    {
-      variables: {
-        input: {
-      type: (selectedCategory as any) || undefined,
-        },
-      },
-      skip: !selectedCategory,
-    }
+  const { data: categoryData, loading: categoryLoading } = useQuery<CategoryTreeQuery>(
+    CATEGORY_TREE,
+    { fetchPolicy: "cache-first" }
   );
 
-  // Refetch when category changes
-  React.useEffect(() => {
-    if (selectedCategory) {
-      refetch({
-        input: {
-          type: selectedCategory as any,
-        },
-      });
-    }
-  }, [selectedCategory, refetch]);
+  const categories = categoryData?.categoryTree || [];
 
-  // Filter services based on selected category
-  const getServicesForCategory = (category: string | undefined) => {
-    if (!servicesData?.serviceCategories) return [];
-    return servicesData.serviceCategories.filter(
-      (serviceCategory) => serviceCategory.type === category
-    );
-  };
-
-  const isLoading = servicesLoading;
-
-  if (isLoading) {
+  if (categoryLoading) {
     return (
       <div className="flex items-center justify-center min-h-64">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -87,9 +48,9 @@ export default function ServiceType() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">Choose Your Service Type</h1>
+        <h1 className="text-3xl font-bold">Choose Your Service Category</h1>
         <p className="text-muted-foreground">
-          Select the type of services you offer, then choose specific services
+          Select the type of services you offer, then choose specific skills
           within that category
         </p>
       </div>
@@ -108,7 +69,6 @@ export default function ServiceType() {
           }`}
         >
           <Card className="relative overflow-hidden h-full">
-            {/* Decorative background */}
             <div className="absolute -right-8 -top-8 opacity-10">
               <Wrench size={120} />
             </div>
@@ -120,7 +80,7 @@ export default function ServiceType() {
                 </div>
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    Casual Services
+                    Casual / Everyday Tasks
                     {selectedCategory === ServiceCategoryType.CASUAL && (
                       <CheckCircle2 className="w-5 h-5 text-green-600" />
                     )}
@@ -130,9 +90,8 @@ export default function ServiceType() {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-sm">
-                General services that don't require specialized certification or
-                professional training. Perfect for everyday tasks and basic
-                assistance.
+                General services, running errands, grocery shopping, pickups,
+                and deliveries. Everyday assistance.
               </CardDescription>
             </CardContent>
           </Card>
@@ -150,7 +109,6 @@ export default function ServiceType() {
           }`}
         >
           <Card className="relative overflow-hidden h-full">
-            {/* Decorative background */}
             <div className="absolute -right-8 -top-8 opacity-10">
               <Briefcase size={120} />
             </div>
@@ -162,7 +120,7 @@ export default function ServiceType() {
                 </div>
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    Professional Services
+                    Skilled / Professional Services
                     {selectedCategory === ServiceCategoryType.PROFESSIONAL && (
                       <CheckCircle2 className="w-5 h-5 text-green-600" />
                     )}
@@ -172,16 +130,15 @@ export default function ServiceType() {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-sm">
-                Specialized services requiring professional expertise,
-                certification, or formal training. For skilled trades and
-                professional consulting.
+                Specialized tasks requiring technical skills, repairs, plumbing,
+                electrical work, carpentry, and consulting.
               </CardDescription>
             </CardContent>
           </Card>
         </motion.div>
       </div>
 
-      {/* Service Selection */}
+      {/* Categories & Skills Grid */}
       {selectedCategory && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -191,11 +148,7 @@ export default function ServiceType() {
         >
           <div className="text-center">
             <h2 className="text-2xl font-semibold">
-              Select{" "}
-              {selectedCategory === ServiceCategoryType.CASUAL
-                ? "Casual"
-                : "Professional"}{" "}
-              Services
+              Select Specific Skills & Services
             </h2>
             <p className="text-muted-foreground">
               Choose all services you can provide ({selectedServicesCount}{" "}
@@ -204,33 +157,54 @@ export default function ServiceType() {
           </div>
 
           <div className="grid gap-4">
-            {getServicesForCategory(selectedCategory).map(
-              (serviceGroup, groupIndex) => (
-                <Card key={groupIndex}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">{serviceGroup.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {serviceGroup.services?.map((service) => (
-                        <motion.div key={service?.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <Button
-                            variant={isServiceSelected(service?.id || "") ? "default" : "outline"}
-                            className="w-full justify-start h-auto p-3 text-left"
-                            onClick={() => toggleService(service?.id || "")}
-                          >
-                            <div className="flex items-center gap-2">
-                              {isServiceSelected(service?.id || "") && <CheckCircle2 className="w-4 h-4 text-white" />}
-                              <span className="truncate">{service?.name}</span>
-                            </div>
-                          </Button>
-                        </motion.div>
-                      )) || []}
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            )}
+            {categories.map((cat) => (
+              <Card key={cat.id}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">{cat.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {/* Parent category button */}
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        variant={isServiceSelected(cat.name) ? "default" : "outline"}
+                        className="w-full justify-start h-auto p-3 text-left"
+                        onClick={() => toggleService(cat.name)}
+                      >
+                        <div className="flex items-center gap-2">
+                          {isServiceSelected(cat.name) && (
+                            <CheckCircle2 className="w-4 h-4 text-white" />
+                          )}
+                          <span className="truncate">{cat.name} (General)</span>
+                        </div>
+                      </Button>
+                    </motion.div>
+
+                    {/* Child categories */}
+                    {cat.children?.map((child) => (
+                      <motion.div
+                        key={child.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Button
+                          variant={isServiceSelected(child.name) ? "default" : "outline"}
+                          className="w-full justify-start h-auto p-3 text-left"
+                          onClick={() => toggleService(child.name)}
+                        >
+                          <div className="flex items-center gap-2">
+                            {isServiceSelected(child.name) && (
+                              <CheckCircle2 className="w-4 h-4 text-white" />
+                            )}
+                            <span className="truncate">{child.name}</span>
+                          </div>
+                        </Button>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           {/* Summary */}
@@ -243,22 +217,17 @@ export default function ServiceType() {
                 <CardContent>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">
-                      <strong>Category:</strong> {selectedCategory}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
                       <strong>Services ({selectedServicesArray.length}):</strong>
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {selectedServicesArray.map((serviceId, index) => {
-                        const allServices = servicesData?.serviceCategories?.flatMap((cat) => cat.services) || [];
-                        const service = allServices.find((service) => service?.id === serviceId);
-                        const serviceName = service?.name || serviceId;
-                        return (
-                          <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                            {serviceName}
-                          </span>
-                        );
-                      })}
+                      {selectedServicesArray.map((serviceName, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                        >
+                          {serviceName}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </CardContent>

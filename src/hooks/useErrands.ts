@@ -1,140 +1,64 @@
-import {
-  ErrandType,
-  type ErrandQueryInput,
-  type ErrandWithClient,
-  type GetErrandsQuery,
-  type GetErrandsQueryVariables,
-} from "@/gql/graphql";
-import { GET_ERRANDS } from "@/graphql";
-import { useQuery, useSubscription } from "@apollo/client";
-import { useState } from "react";
+import { useQuery } from "@apollo/client";
+import { OPEN_ERRANDS } from "@/graphql";
+import type { OpenErrandsQuery, OpenErrandsQueryVariables } from "@/gql/graphql";
+import { useUserStore } from "@/store/userStore";
+
+export interface ErrandSummaryItem {
+  id: string;
+  title: string;
+  categoryId: string;
+  createdAt: string;
+  distanceMeters: number;
+  budget: {
+    amountMinorUnits: number;
+    currency: string;
+  };
+}
 
 export interface UseErrandsOptions {
-  type?: ErrandQueryInput["type"];
   search?: string;
-  page?: number;
-  limit?: number;
-  maxDistanceKm?: number;
+  categoryId?: string;
+  radiusMeters?: number;
+  type?: string;
   enableSubscriptions?: boolean;
 }
 
 export function useErrands(options: UseErrandsOptions = {}) {
-  const {
-    type = ErrandType.Feed,
-    search,
-    page = 1,
-    limit = 10,
-    maxDistanceKm = 20,
-    enableSubscriptions = true,
-  } = options;
+  const { user } = useUserStore();
 
-  /**
-   * Only query variables belong in local state
-   * Apollo query results must NOT be copied into React state
-   */
-  const [queryInput, setQueryInput] = useState<ErrandQueryInput>({
-    type,
-    search,
-    pagination: { page, limit },
-    maxDistanceKm,
+  const { data, loading, error, refetch } = useQuery<
+    OpenErrandsQuery,
+    OpenErrandsQueryVariables
+  >(OPEN_ERRANDS, {
+    variables: {
+      input: {
+        requesterPartyId: user?.partyId || "anonymous",
+        latitude: 6.5244,
+        longitude: 3.3792,
+        radiusMeters: options.radiusMeters || 50000,
+        categoryId: options.categoryId,
+        limit: 20,
+      },
+    },
+    fetchPolicy: "cache-and-network",
   });
 
-  const { data, loading, error, refetch, fetchMore } = useQuery<
-    GetErrandsQuery,
-    GetErrandsQueryVariables
-  >(GET_ERRANDS, {
-    variables: { input: queryInput },
-    notifyOnNetworkStatusChange: true,
-  });
-
-  /**
-   * Reactive errands array
-   * Updates instantly when cache changes
-   */
-  const errands: ErrandWithClient[] =
-    (data?.getErrands?.data as ErrandWithClient[]) ?? [];
-
-  /**
-   * Pagination
-   */
-  const loadMore = async () => {
-    if (!data?.getErrands?.hasNextPage) return;
-
-    await fetchMore({
-      variables: {
-        input: {
-          ...queryInput,
-          pagination: {
-            page: (queryInput.pagination?.page || 1) + 1,
-            limit,
-          },
-        },
-      },
-      updateQuery: (prev, { fetchMoreResult }) => {
-        if (!fetchMoreResult) return prev;
-
-        return {
-          getErrands: {
-            ...fetchMoreResult.getErrands,
-            data: [
-              ...prev.getErrands.data,
-              ...fetchMoreResult.getErrands.data,
-            ],
-          },
-        };
-      },
-    });
-  };
-
-  /**
-   * Actions
-   */
-  const refresh = () => refetch();
-
-  const searchErrands = (keyword: string) => {
-    setQueryInput({
-      type: ErrandType.Search,
-      search: keyword,
-      pagination: { page: 1, limit },
-      maxDistanceKm,
-    });
-  };
-
-  const changeTab = (newType: ErrandQueryInput["type"]) => {
-    setQueryInput({
-      type: newType,
-      search: newType === "SEARCH" ? queryInput.search : undefined,
-      pagination: { page: 1, limit },
-      maxDistanceKm,
-    });
-  };
-
-  const goToPage = (pageNumber: number) => {
-    setQueryInput({
-      ...queryInput,
-      pagination: { page: pageNumber, limit },
-    });
-  };
+  const errands: ErrandSummaryItem[] = data?.openErrands?.items || [];
 
   return {
-    // Data (fully reactive)
     errands,
-    total: data?.getErrands?.total ?? 0,
-    page: data?.getErrands?.page ?? 1,
-    totalPages: data?.getErrands?.totalPages ?? 1,
-    hasNextPage: data?.getErrands?.hasNextPage ?? false,
-    hasPreviousPage: data?.getErrands?.hasPreviousPage ?? false,
-
-    // State
+    total: errands.length,
+    page: 1,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPreviousPage: false,
     loading,
     error,
-
-    // Actions
-    loadMore,
-    refresh,
-    searchErrands,
-    changeTab,
-    goToPage,
+    refresh: () => refetch(),
+    searchErrands: (_keyword?: string) => refetch(),
+    changeTab: (_tab?: string) => refetch(),
+    goToPage: (_page?: number) => {},
+    loadMore: async () => {},
     refetch,
   };
 }

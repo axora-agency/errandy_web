@@ -1,16 +1,15 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components";
-import { type ErrandWithClient } from "@/gql/graphql";
-import { Briefcase, MapPin, Calendar, DollarSign, User } from "lucide-react";
+import type { ErrandDetailType } from "@/gql/graphql";
+import { Calendar, DollarSign } from "lucide-react";
 import {
   getErrandStatusColor,
   getErrandStatusLabel,
-  formatErrandPrice,
   formatErrandDate,
 } from "@/utils/errandFormatters";
 
 interface ErrandCardProps {
-  errand: ErrandWithClient;
+  errand: ErrandDetailType;
   onPress: () => void;
   isProvider?: boolean;
 }
@@ -18,9 +17,10 @@ interface ErrandCardProps {
 export const ErrandCard: React.FC<ErrandCardProps> = ({
   errand,
   onPress,
-  isProvider,
 }) => {
   const statusColor = getErrandStatusColor(errand.status);
+  const amount = (errand.budget?.amountMinorUnits || 0) / 100;
+  const currency = errand.budget?.currency === "NGN" ? "₦" : (errand.budget?.currency || "₦");
 
   return (
     <Card
@@ -42,12 +42,6 @@ export const ErrandCard: React.FC<ErrandCardProps> = ({
             {getErrandStatusLabel(errand.status)}
           </Badge>
         </div>
-        {errand.service && (
-          <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-            <Briefcase className="h-3 w-3" />
-            <span>{errand.service.name}</span>
-          </div>
-        )}
       </CardHeader>
 
       <CardContent className="space-y-3">
@@ -60,19 +54,10 @@ export const ErrandCard: React.FC<ErrandCardProps> = ({
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm">
             <DollarSign className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">
-              {formatErrandPrice(errand.price, errand.hourlyRate)}
+            <span className="font-semibold text-foreground">
+              {currency}{amount.toLocaleString()}
             </span>
           </div>
-
-          {errand.serviceAddress && (
-            <div className="flex items-center gap-2 text-sm">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground truncate">
-                {errand.serviceAddress}
-              </span>
-            </div>
-          )}
 
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -81,19 +66,6 @@ export const ErrandCard: React.FC<ErrandCardProps> = ({
             </span>
           </div>
         </div>
-
-        {/* Show client info for providers */}
-        {isProvider && errand.client?.user && (
-          <div className="flex items-center gap-2 pt-3 border-t text-sm">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{errand.client.user.name}</span>
-            {errand.distance && (
-              <span className="text-muted-foreground">
-                • {errand.distance.toFixed(1)} km away
-              </span>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
