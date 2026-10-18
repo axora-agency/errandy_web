@@ -21,7 +21,7 @@ export default defineConfig({
     proxy: {
       // Match all subdomains dynamically
       "^.+\\.localhost": {
-        target: "http://localhost:3000", // Main backend
+        target: "http://localhost:8080", // Main backend
         rewrite: (path) => path, // Forward the full path as-is
         changeOrigin: true,
       },

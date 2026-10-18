@@ -5,7 +5,14 @@ import {
   useContext,
   useState,
 } from "react";
-import type { IMenuItemConfig, TMenuConfig } from "@/components/menu";
+export interface IMenuItemConfig {
+  title?: string;
+  path?: string;
+  icon?: string;
+  children?: IMenuItemConfig[];
+  [key: string]: any;
+}
+export type TMenuConfig = IMenuItemConfig[];
 
 export interface IMenusProps {
   configs: Map<string, TMenuConfig | null>;

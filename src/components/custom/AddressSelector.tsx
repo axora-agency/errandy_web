@@ -1,212 +1,122 @@
 import { useState, useRef, useEffect } from "react";
-import { MapPin, Plus, Search, Check, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useUserStore } from "@/store/userStore";
-import { useLazyQuery, useMutation } from "@apollo/client";
+import { MapPin, Plus, Check, Loader2, Navigation } from "lucide-react";
+import { useQuery, useMutation } from "@apollo/client";
 import { getCurrentPosition } from "@/utils";
 import { toast } from "sonner";
 import type {
-  AddAddressMutation,
-  AddAddressMutationVariables,
-  AddressSuggestion,
-  GetPlaceDetailsQuery,
-  GetPlaceDetailsQueryVariables,
-  SuggestAddressesQuery,
-  SuggestAddressesQueryVariables,
+  MyAddressesQuery,
+  CreateAddressMutation,
+  CreateAddressMutationVariables,
+  SetDefaultAddressMutation,
+  SetDefaultAddressMutationVariables,
 } from "@/gql/graphql";
-import { ADD_USER_ADDRESS, GET_PLACE_DETAILS, SUGGEST_ADDRESSES } from "@/graphql";
-
-// Selected place for new addresses
-type SelectedPlace = {
-  description: string;
-  placeId: string;
-  label?: string;
-  lat?: number;
-  lng?: number;
-};
+import {
+  MY_ADDRESSES,
+  CREATE_ADDRESS,
+  SET_DEFAULT_ADDRESS,
+} from "@/graphql";
 
 const AddressSelector = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
-  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
-  const [selectedPlace, setSelectedPlace] = useState<SelectedPlace | null>(
-    null
-  );
-  const [newAddressLabel, setNewAddressLabel] = useState("");
   const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [street, setStreet] = useState("");
+  const [label, setLabel] = useState("Home");
+  const [city, setCity] = useState("Lagos");
+  const [state, setState] = useState("Lagos");
+  const [country] = useState("Nigeria");
+  const [latitude, setLatitude] = useState<number | null>(6.5244);
+  const [longitude, setLongitude] = useState<number | null>(3.3792);
+  const [detecting, setDetecting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const { user, setUser } = useUserStore();
+  const { data, loading: loadingAddresses } = useQuery<MyAddressesQuery>(MY_ADDRESSES);
 
-  // Get user addresses from the user object
-  const userAddresses = user?.userAddress || [];
-
-  const currentAddress =
-    userAddresses.find((addr) => addr?.id === user?.activeAddressId) || null;
-
-  // GraphQL hooks
-  const [fetchSuggestions] = useLazyQuery<
-    SuggestAddressesQuery,
-    SuggestAddressesQueryVariables
-  >(SUGGEST_ADDRESSES, {
-    fetchPolicy: "no-cache",
-    onCompleted: (data) => {
-      setSuggestions(data?.suggestAddresses || []);
-    },
-  });
-
-  const [fetchPlaceDetails] = useLazyQuery<
-    GetPlaceDetailsQuery,
-    GetPlaceDetailsQueryVariables
-  >(GET_PLACE_DETAILS, {
-    fetchPolicy: "no-cache",
-    onCompleted: (data) => {
-      if (data?.placeDetails && selectedPlace) {
-        const { formattedAddress, latitude, longitude } = data.placeDetails;
-        setSelectedPlace((prev) =>
-          prev
-            ? {
-                ...prev,
-                description: formattedAddress,
-                lat: latitude,
-                lng: longitude,
-              }
-            : null
-        );
-      }
-    },
-  });
-
-  const [saveUserAddress] = useMutation<
-    AddAddressMutation,
-    AddAddressMutationVariables
-  >(ADD_USER_ADDRESS, {
-    onCompleted: (data) => {
-      if (data?.addAddress) {
-        setUser(data.addAddress);
-        toast.success("Address saved successfully");
-        resetAddressForm();
-        setIsOpen(false);
-      }
-    },
-    onError: (error) => {
-      console.error("Error saving address:", error);
-      toast.error("Failed to save address");
+  const [createAddress, { loading: creating }] = useMutation<
+    CreateAddressMutation,
+    CreateAddressMutationVariables
+  >(CREATE_ADDRESS, {
+    refetchQueries: [{ query: MY_ADDRESSES }],
+    onCompleted: () => {
+      toast.success("Address saved successfully");
       setIsAddingAddress(false);
+      setStreet("");
+    },
+    onError: (err) => {
+      console.error("Create address error:", err);
+      toast.error(err.message || "Failed to save address");
     },
   });
 
-  const truncateAddress = (address: string, maxLength: number = 20) => {
-    if (address.length <= maxLength) return address;
-    return address.substring(0, maxLength) + "...";
-  };
+  const [setDefaultAddress] = useMutation<
+    SetDefaultAddressMutation,
+    SetDefaultAddressMutationVariables
+  >(SET_DEFAULT_ADDRESS, {
+    refetchQueries: [{ query: MY_ADDRESSES }],
+    onCompleted: () => {
+      toast.success("Default address updated");
+      setIsOpen(false);
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to set default address");
+    },
+  });
 
-  const resetAddressForm = () => {
-    setSearchQuery("");
-    setSuggestions([]);
-    setSelectedPlace(null);
-    setNewAddressLabel("");
-    setIsSearching(false);
-    setIsAddingAddress(false);
-  };
+  const addresses = data?.myAddresses || [];
+  const currentAddress = addresses.find((a) => a.isDefault) || addresses[0] || null;
 
-  // Fetch suggestions when search query changes
-  useEffect(() => {
-    if (!searchQuery || searchQuery.length < 2) {
-      setSuggestions([]);
-      return;
-    }
-
-    fetchSuggestions({
-      variables: {
-        input: {
-          input: searchQuery,
-        },
-      },
-    });
-  }, [searchQuery, fetchSuggestions]);
-
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        resetAddressForm();
+        setIsAddingAddress(false);
       }
     };
-
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen]);
 
-  const handleSuggestionSelect = (suggestion: AddressSuggestion) => {
-    const place: SelectedPlace = {
-      description: suggestion.description,
-      placeId: suggestion.placeId,
-    };
-    setSelectedPlace(place);
-    setSearchQuery(suggestion.description);
-    setSuggestions([]);
+  const handleUseCurrentLocation = async () => {
+    setDetecting(true);
+    try {
+      const pos = await getCurrentPosition();
+      setLatitude(pos.coords.latitude);
+      setLongitude(pos.coords.longitude);
+      if (!street) {
+        setStreet("Current Device Location");
+      }
+      toast.success("GPS location detected");
+    } catch {
+      toast.error("Could not get GPS coordinates");
+    } finally {
+      setDetecting(false);
+    }
+  };
 
-    // Fetch detailed place information
-    fetchPlaceDetails({
+  const handleSaveAddress = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!street.trim()) {
+      toast.error("Please provide street address");
+      return;
+    }
+    createAddress({
       variables: {
         input: {
-          placeId: suggestion.placeId,
+          label: label.trim() || "Home",
+          street: street.trim(),
+          city,
+          state,
+          country,
+          coordinates: {
+            latitude: latitude || 6.5244,
+            longitude: longitude || 3.3792,
+          },
         },
       },
     });
-  };
-
-  const handleSaveAddress = async () => {
-    if (!selectedPlace || !newAddressLabel.trim()) {
-      toast.error("Please provide both address and label");
-      return;
-    }
-
-    if (!selectedPlace.lat || !selectedPlace.lng) {
-      toast.error("Address coordinates not found");
-      return;
-    }
-
-    setIsAddingAddress(true);
-
-    try {
-      await saveUserAddress({
-        variables: {
-          dto: {
-            address: selectedPlace.description,
-            label: newAddressLabel.trim(),
-            latitude: selectedPlace.lat,
-            longitude: selectedPlace.lng,
-          },
-        },
-      });
-    } catch (error) {
-      // Error handled in mutation onError
-    }
-  };
-
-  const handleUseCurrentLocation = async () => {
-    setIsAddingAddress(true);
-    try {
-      const position = await getCurrentPosition();
-
-      // In a real implementation, you'd call the useCurrentAddress mutation
-      // For now, we'll show a message
-      toast.success("Current location will be implemented");
-      console.log("Current position:", position.coords);
-    } catch (error) {
-      toast.error("Unable to access current location");
-    } finally {
-      setIsAddingAddress(false);
-    }
   };
 
   return (
@@ -214,171 +124,108 @@ const AddressSelector = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-muted/50 transition-colors focus:outline-none border-b border-transparent hover:border-muted-foreground"
-        title={currentAddress ? currentAddress.address || "" : "Select address"}
+        title={currentAddress ? `${currentAddress.label}: ${currentAddress.street}` : "Select address"}
       >
         <MapPin className="size-4 text-muted-foreground flex-shrink-0" />
         <span className="hidden xl:inline text-foreground truncate max-w-[120px]">
-          {currentAddress
-            ? truncateAddress(currentAddress.address || "")
-            : "Select address"}
+          {currentAddress ? currentAddress.street : "Select address"}
         </span>
       </button>
 
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-80 bg-popover text-popover-foreground overflow-hidden rounded-md border shadow-md dark:shadow-xl dark:shadow-primary/20 dark:border-primary/30 z-50 max-h-96">
-          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <h3 className="font-semibold text-sm">
-              {isSearching ? "Add New Address" : "Select Address"}
+              {isAddingAddress ? "Add New Address" : "Saved Addresses"}
             </h3>
             <button
-              onClick={() => setIsSearching(!isSearching)}
-              className="p-1 hover:bg-muted rounded"
-              title={isSearching ? "Cancel" : "Add new address"}
+              onClick={() => setIsAddingAddress(!isAddingAddress)}
+              className="p-1 hover:bg-muted rounded text-xs"
             >
-              {isSearching ? "✕" : <Plus className="size-4" />}
+              {isAddingAddress ? "Cancel" : <Plus className="size-4" />}
             </button>
           </div>
 
-          {/* Add New Address Form */}
-          {isSearching && (
-            <div className="p-4 border-b bg-muted/20 space-y-3">
-              {/* Address Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
+          {isAddingAddress ? (
+            <form onSubmit={handleSaveAddress} className="p-4 space-y-3 bg-muted/20">
+              <div>
                 <input
                   type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search for address..."
-                  className="w-full pl-10 pr-3 py-2 text-sm bg-background border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                  autoFocus
+                  placeholder="Label (e.g. Home, Office)"
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  className="w-full text-xs p-2 rounded border bg-background"
                 />
               </div>
-
-              {/* Address Suggestions */}
-              {suggestions.length > 0 && (
-                <div className="max-h-32 overflow-y-auto border rounded bg-background">
-                  {suggestions.map((suggestion) => (
-                    <button
-                      key={suggestion.placeId}
-                      onClick={() => handleSuggestionSelect(suggestion)}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b last:border-b-0"
-                    >
-                      {suggestion.description}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Selected Address Details */}
-              {selectedPlace && (
-                <div className="space-y-2 p-3 bg-background border rounded">
-                  <div className="text-sm font-medium text-primary">
-                    Selected:
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {selectedPlace.description}
-                  </div>
-
-                  {/* Address Label Input */}
-                  <div>
-                    <input
-                      type="text"
-                      value={newAddressLabel}
-                      onChange={(e) => setNewAddressLabel(e.target.value)}
-                      placeholder="Label (e.g., Home, Work, etc.)"
-                      className="w-full px-3 py-2 text-sm bg-background border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-
-                  {/* Save Button */}
-                  <button
-                    onClick={handleSaveAddress}
-                    disabled={!newAddressLabel.trim() || isAddingAddress}
-                    className="w-full px-3 py-2 bg-primary text-primary-foreground text-sm rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isAddingAddress && (
-                      <Loader2 className="size-4 animate-spin" />
-                    )}
-                    {isAddingAddress ? "Saving..." : "Save Address"}
-                  </button>
-                </div>
-              )}
-
-              {/* Current Location Option */}
-              <div className="flex items-center justify-between pt-2 border-t">
-                <span className="text-sm text-muted-foreground">Or</span>
-                <button
-                  onClick={handleUseCurrentLocation}
-                  disabled={isAddingAddress}
-                  className="text-sm text-primary hover:text-primary/80 disabled:opacity-50"
-                >
-                  Use current location
-                </button>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Street Address"
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  className="w-full text-xs p-2 rounded border bg-background"
+                  required
+                />
               </div>
-            </div>
-          )}
-
-          {/* Address List - Only show when not searching */}
-          {!isSearching && (
-            <div className="max-h-64 overflow-y-auto">
-              {userAddresses.length === 0 ? (
-                <div className="px-4 py-6 text-center text-muted-foreground">
-                  <MapPin className="size-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No saved addresses</p>
-                  <p className="text-xs mt-1">
-                    Add your first address to get started
-                  </p>
-                </div>
-              ) : (
-                userAddresses
-                  .filter((address) => address !== null)
-                  .map((address) => (
-                  <button
-                    key={address!.id}
-                    className={cn(
-                      "flex items-start gap-3 w-full px-4 py-3 text-left hover:bg-muted/50 border-b border-border/50 last:border-b-0 transition-colors",
-                      address?.id === user?.activeAddressId && "bg-primary/5"
-                    )}
-                    disabled // For now, since we can't switch addresses without proper backend support
-                  >
-                    <MapPin className="size-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              "text-sm font-medium",
-                              address?.id === user?.activeAddressId && "text-primary"
-                            )}
-                          >
-                            {address?.label}
-                          </span>
-                          {address?.id === user?.activeAddressId && (
-                            <Check className="size-3 text-primary" />
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {address?.address}
-                      </p>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* Footer - Only show when not searching */}
-          {!isSearching && (
-            <div className="px-4 py-2 border-t bg-muted/20">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="City"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full text-xs p-2 rounded border bg-background"
+                />
+                <input
+                  type="text"
+                  placeholder="State"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  className="w-full text-xs p-2 rounded border bg-background"
+                />
+              </div>
               <button
-                className="text-xs text-primary hover:text-primary/80 w-full text-center"
-                onClick={() => setIsOpen(false)}
+                type="button"
+                onClick={handleUseCurrentLocation}
+                className="w-full flex items-center justify-center gap-1.5 text-xs py-1.5 px-2 rounded border hover:bg-muted"
+                disabled={detecting}
               >
-                Close
+                <Navigation className="size-3" />
+                {detecting ? "Locating..." : "Use Current GPS Location"}
               </button>
+              <button
+                type="submit"
+                disabled={creating}
+                className="w-full bg-primary text-primary-foreground text-xs py-2 rounded font-medium"
+              >
+                {creating ? "Saving..." : "Save Address"}
+              </button>
+            </form>
+          ) : (
+            <div className="max-h-60 overflow-y-auto divide-y">
+              {loadingAddresses && (
+                <div className="p-4 flex items-center justify-center text-xs text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin mr-2" />
+                  Loading addresses...
+                </div>
+              )}
+              {!loadingAddresses && addresses.length === 0 && (
+                <div className="p-4 text-center text-xs text-muted-foreground">
+                  No saved addresses yet.
+                </div>
+              )}
+              {addresses.map((addr) => (
+                <div
+                  key={addr.id}
+                  onClick={() => setDefaultAddress({ variables: { addressId: addr.id } })}
+                  className="p-3 hover:bg-muted/50 cursor-pointer flex items-center justify-between"
+                >
+                  <div className="truncate pr-2">
+                    <p className="text-xs font-semibold">{addr.label}</p>
+                    <p className="text-xs text-muted-foreground truncate">{addr.street}, {addr.city}</p>
+                  </div>
+                  {addr.isDefault && <Check className="size-4 text-primary flex-shrink-0" />}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -387,4 +234,5 @@ const AddressSelector = () => {
   );
 };
 
+export default AddressSelector;
 export { AddressSelector };

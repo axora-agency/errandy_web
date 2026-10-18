@@ -29,13 +29,13 @@ const getLayouts = (): Map<string, Partial<ILayoutConfig>> => {
 };
 
 const initialProps: ILayoutProps = {
-  getLayout: (name: string): Partial<ILayoutConfig> | undefined => {
+  getLayout: (_name: string): Partial<ILayoutConfig> | undefined => {
     return {};
   },
-  hasLayout: (name: string): boolean => false,
-  updateLayout: (name: string, config: Partial<ILayoutConfig>) => {},
+  hasLayout: (_name: string): boolean => false,
+  updateLayout: (_name: string, _config: Partial<ILayoutConfig>) => {},
   currentLayout: null,
-  setCurrentLayout: (layoutProvider: any) => {}
+  setCurrentLayout: (_layoutProvider: any) => {}
 };
 
 const LayoutContext = createContext<ILayoutProps>(initialProps);

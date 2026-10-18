@@ -1,41 +1,46 @@
 import { ScreenLoader } from "@/components";
-import type { UserQuery, UserQueryVariables, User } from "@/gql/graphql";
-import { GET_USER } from "@/graphql";
+import { MY_PARTY_PROFILE } from "@/graphql";
+import type { MyPartyProfileQuery } from "@/gql/graphql";
 import { auth } from "@/lib/auth";
 import { useUserStore } from "@/store/userStore";
-import { extractGraphQLErrors } from "@/utils";
 import { useQuery } from "@apollo/client";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { toast } from "sonner";
 import { useEffect } from "react";
 
 const RequireAuth = () => {
   const { data: session, isPending } = auth.useSession();
   const location = useLocation();
   const { setUser } = useUserStore();
-  console.log(session, "User sessions")
 
-  const { data, loading, error } = useQuery<UserQuery, UserQueryVariables>(
-    GET_USER,
-    {
-      skip: !Boolean(session?.session && session.user?.id),
-    }
-  );
-
+  const { data, loading, error } = useQuery<MyPartyProfileQuery>(MY_PARTY_PROFILE, {
+    skip: !Boolean(session?.session && session.user?.id),
+  });
 
   useEffect(() => {
     if (error) {
-      const errors = extractGraphQLErrors(error);
-      console.log(errors);
-      toast.error(errors[0]?.message);
+      console.error("Failed to load party profile:", error);
     }
   }, [error]);
 
   useEffect(() => {
-    if (!loading && data?.user) {
-      setUser(data.user as User);
+    if (session?.user) {
+      const party = data?.myPartyProfile;
+      setUser({
+        id: session.user.id,
+        partyId: party?.partyId,
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image,
+        activeRole: party?.hasProviderRole ? "PROVIDER" : "CLIENT",
+        hasClientRole: party?.hasClientRole ?? true,
+        hasProviderRole: party?.hasProviderRole ?? false,
+        providerTier: party?.providerTier,
+        skills: party?.skills,
+        bio: party?.bio,
+        marketId: party?.marketId,
+      });
     }
-  }, [loading, data?.user, setUser]);
+  }, [session?.user, data?.myPartyProfile, setUser]);
 
   if (isPending || loading) {
     return <ScreenLoader />;

@@ -1,4 +1,12 @@
-import { ErrandStatus } from "../gql/graphql";
+export type ErrandStatus =
+  | "OPEN"
+  | "ASSIGNED"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "DISPUTED"
+  | "DRAFT"
+  | "OVERDUE";
 
 /**
  * Status color mapping for errand statuses
@@ -8,22 +16,16 @@ export const getErrandStatusColor = (
   status: ErrandStatus | string | undefined | null,
 ): string => {
   switch (status) {
-    case ErrandStatus.Open:
     case "OPEN":
       return "#22C55E"; // green
-    case ErrandStatus.InProgress:
     case "IN_PROGRESS":
       return "#3B82F6"; // blue
-    case ErrandStatus.Completed:
     case "COMPLETED":
       return "#10B981"; // emerald
-    case ErrandStatus.Draft:
     case "DRAFT":
       return "#6B7280"; // gray
-    case ErrandStatus.Cancelled:
     case "CANCELLED":
       return "#EF4444"; // red
-    case ErrandStatus.Overdue:
     case "OVERDUE":
       return "#F59E0B"; // amber
     default:
@@ -38,22 +40,16 @@ export const getErrandStatusLabel = (
   status: ErrandStatus | string | undefined | null,
 ): string => {
   switch (status) {
-    case ErrandStatus.Open:
     case "OPEN":
       return "Open";
-    case ErrandStatus.InProgress:
     case "IN_PROGRESS":
       return "In Progress";
-    case ErrandStatus.Completed:
     case "COMPLETED":
       return "Completed";
-    case ErrandStatus.Draft:
     case "DRAFT":
       return "Draft";
-    case ErrandStatus.Cancelled:
     case "CANCELLED":
       return "Cancelled";
-    case ErrandStatus.Overdue:
     case "OVERDUE":
       return "Overdue";
     default:

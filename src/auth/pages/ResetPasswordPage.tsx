@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
@@ -18,6 +18,7 @@ import {
 import { Eye, EyeOff, Lock, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ToastMessage } from "@/components";
+import { resetPassword } from "@/lib/auth";
 
 export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -25,6 +26,7 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const {
     register,
@@ -37,9 +39,15 @@ export default function ResetPasswordPage() {
   const onSubmit = async (data: ResetPasswordFormData) => {
     setIsLoading(true);
     try {
-      // In a real app, you would call your password reset API here
-      // For demo purposes, we'll simulate updating the password
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const token = searchParams.get("token") || undefined;
+      const res = await resetPassword({
+        newPassword: data.password,
+        token,
+      });
+
+      if (res?.error) {
+        throw new Error(res.error.message || "Failed to reset password");
+      }
 
       setIsSuccess(true);
       toast.success(
@@ -53,11 +61,11 @@ export default function ResetPasswordPage() {
       setTimeout(() => {
         navigate("/auth/login");
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       toast.error(
         <ToastMessage
           title="Failed to reset password"
-          description="An error occurred. Please try again."
+          description={error?.message || "An error occurred. Please try again."}
         />
       );
     } finally {

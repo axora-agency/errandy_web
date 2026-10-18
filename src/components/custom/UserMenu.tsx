@@ -4,15 +4,16 @@ import { User, Settings, LogOut, Monitor } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUserStore } from "@/store/userStore";
 import { useTheme } from "@/components/theme-provider";
+import { auth } from "@/lib/auth";
 
 const UserMenu = () => {
-  const { user } = useUserStore();
+  const { user, setUser } = useUserStore();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const getInitials = (name?: string) => {
+  const getInitials = (name?: string | null) => {
     if (!name) return "U";
     return name
       .split(" ")
@@ -42,9 +43,15 @@ const UserMenu = () => {
     setTheme(themes[nextIndex]);
   };
 
-  const handleLogout = () => {
-    navigate("/auth/login");
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
+    setUser(null);
     setIsOpen(false);
+    navigate("/auth/login");
   };
 
   // Close dropdown when clicking outside

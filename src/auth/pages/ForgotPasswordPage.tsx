@@ -19,6 +19,7 @@ import { Mail, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { ToastMessage } from "@/components";
 import { Logo } from "@/assets";
+import { auth } from "@/lib/auth";
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -35,9 +36,16 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
     try {
-      // In a real app, you would call your password reset API here
-      // For demo purposes, we'll simulate sending an email
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const fn = (auth as any).requestPasswordReset || (auth as any).forgetPassword;
+      if (fn) {
+        const res = await fn({
+          email: data.email,
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        });
+        if (res?.error) {
+          throw new Error(res.error.message || "Failed to send reset link");
+        }
+      }
 
       setIsEmailSent(true);
       toast.success(
@@ -46,11 +54,11 @@ export default function ForgotPasswordPage() {
           description="Check your email for a password reset link."
         />
       );
-    } catch (error) {
+    } catch (error: any) {
       toast.error(
         <ToastMessage
           title="Failed to send reset link"
-          description="An error occurred. Please try again."
+          description={error?.message || "An error occurred. Please try again."}
         />
       );
     } finally {

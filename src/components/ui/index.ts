@@ -11,3 +11,4 @@ export * from "./sonner";
 export * from "./tabs";
 export * from "./empty"
 export * from "./pagination"
+export * from "./textarea"

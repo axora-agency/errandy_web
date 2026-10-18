@@ -1,9 +1,6 @@
 import {
   ApolloClient,
   InMemoryCache,
-  type NormalizedCacheObject,
-  gql,
-  Observable,
   split,
   ApolloLink,
 } from "@apollo/client";
@@ -18,48 +15,29 @@ import { toast } from "sonner";
 loadErrorMessages();
 loadDevMessages();
 
-const { VITE_API_URL, VITE_REDIS_URL } = import.meta.env;
+const API_URL = import.meta.env.VITE_API_URL || "https://api.errandy.name.ng";
+const WS_URL =
+  import.meta.env.VITE_REDIS_URL || "wss://api.errandy.name.ng/graphql";
 
 const wsLink = new WebSocketLink({
-  uri: `${VITE_REDIS_URL}`,
+  uri: WS_URL,
   options: {
     reconnect: true,
-    connectionParams: {
-      // Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-    },
+    lazy: true,
   },
 });
-
-async function refreshToken(client: ApolloClient<NormalizedCacheObject>) {
-  try {
-    const { data } = await client.mutate({
-      mutation: gql`
-        mutation RefreshToken {
-          refreshToken
-        }
-      `,
-    });
-    const newAccessToken = data?.refreshToken;
-    if (!newAccessToken) {
-      console.log("New access token not received.");
-    }
-    return `Bearer ${newAccessToken}`;
-  } catch (err) {
-    console.log("Error getting new access token.");
-  }
-}
 
 const createLoadingLink = () =>
   new ApolloLink((operation, forward) => {
     const includedOperations = new Set([
-      "createPasscode",
-      "VerifyPasscode",
-      "VerifyBiometric",
-      "updateUser",
+      "AddProviderRole",
+      "UpdateProviderRole",
+      "CreateAddress",
+      "CreateErrand",
+      "PublishErrand",
     ]);
 
     const operationName = operation.operationName;
-
     const shouldTrack = includedOperations.has(operationName);
 
     if (shouldTrack) {
@@ -72,64 +50,25 @@ const createLoadingLink = () =>
       });
     }
 
-    // If not tracked, just forward the operation
     return forward(operation);
   });
 
-let retryCount = 0;
-const maxRetry = 3;
-
-export const errorLink = onError(
-  ({ graphQLErrors, networkError, operation, forward }) => {
-    if (graphQLErrors) {
-      for (let err of graphQLErrors) {
-        switch (err.extensions?.code) {
-          case "UNAUTHENTICATED":
-            if (retryCount >= maxRetry) {
-              console.warn("Max retry reached. Redirecting to login.");
-              // redirect for web
-              toast.error("UNAUTHENTICATED");
-              return;
-            }
-
-            retryCount++;
-            return new Observable((observer) => {
-              refreshToken(client)
-                .then((newToken) => {
-                  const oldHeaders = operation.getContext().headers || {};
-                  operation.setContext({
-                    headers: {
-                      ...oldHeaders,
-                      authorization: newToken,
-                    },
-                  });
-
-                  forward(operation).subscribe({
-                    next: observer.next.bind(observer),
-                    error: observer.error.bind(observer),
-                    complete: observer.complete.bind(observer),
-                  });
-                })
-                .catch((refreshError) => {
-                  console.error(
-                    "[Auth error]: Token refresh failed",
-                    refreshError
-                  );
-                  observer.error(refreshError);
-                });
-            });
-        }
+export const errorLink = onError(({ graphQLErrors, networkError }) => {
+  if (graphQLErrors) {
+    for (const err of graphQLErrors) {
+      if (err.extensions?.code === "UNAUTHENTICATED") {
+        toast.error("Session expired. Please sign in again.");
       }
     }
-
-    if (networkError) {
-      console.error(`[Network error]: ${networkError}`);
-    }
   }
-);
+
+  if (networkError) {
+    console.error(`[Network error]: ${networkError}`);
+  }
+});
 
 const uploadLink = createUploadLink({
-  uri: `${VITE_API_URL}/graphql`,
+  uri: `${API_URL}/graphql`,
   credentials: "include",
   headers: {
     "apollo-require-preflight": "true",

@@ -53,7 +53,7 @@ export default function LoginPage() {
             description="Welcome back! Redirecting to dashboard..."
           />
         );
-        navigate("/dashboard");
+        navigate("/");
       }
     } catch (error) {
       toast.error(
@@ -74,7 +74,7 @@ export default function LoginPage() {
     try {
       await auth.signIn.social({
         provider,
-        callbackURL: "http://localhost:3000",
+        callbackURL: window.location.origin,
       });
     } catch (error) {
       toast.error(
@@ -155,7 +155,7 @@ export default function LoginPage() {
                 )}
                 <div className="flex justify-end mt-1">
                   <Link
-                    to="/forgot-password"
+                    to="/auth/forgot-password"
                     className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
                   >
                     Forgot password?

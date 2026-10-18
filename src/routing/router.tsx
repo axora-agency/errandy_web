@@ -58,6 +58,7 @@ import { Error404Page } from "@/errors/Error404Page";
 import { Error500Page } from "@/errors/Error500Page";
 import ClientRequiredPage from "@/errors/ClientRequiredPage";
 import WorkerRequiredPage from "@/errors/WorkerRequiredPage";
+import AdminDashboardPage from "@/admin/AdminDashboardPage";
 
 // Root redirect component
 const RootRedirect = () => {
@@ -260,8 +261,18 @@ export const router = createBrowserRouter([
                   {
                     path: "errand/:errandId",
                     element: <ErrandPage />,
-                    handle: { title: "Errand Details", breadcrumb: "Errand" }
-                  }
+                    handle: { title: "Errand Details", breadcrumb: "Errand" },
+                  },
+                  {
+                    path: "errands/:errandId",
+                    element: <ErrandPage />,
+                    handle: { title: "Errand Details", breadcrumb: "Errand" },
+                  },
+                  {
+                    path: "admin",
+                    element: <AdminDashboardPage />,
+                    handle: { title: "Admin Console", breadcrumb: "Admin" },
+                  },
                 ],
               },
             ],

@@ -1,10 +1,10 @@
 import { createAuthClient } from "better-auth/react";
 import { usernameClient } from "better-auth/client/plugins";
 
-const { VITE_API_URL } = import.meta.env;
+const API_URL = import.meta.env.VITE_API_URL || "https://api.errandy.name.ng";
 
 export const auth = createAuthClient({
-  baseURL: `${VITE_API_URL}/api/auth`,
+  baseURL: `${API_URL}/api/auth`,
   plugins: [usernameClient()],
   fetchOptions: {
     onError: (context) => {
@@ -32,8 +32,6 @@ export const {
   sendVerificationEmail,
   signUp,
   changePassword,
-  forgetPassword,
-  requestPasswordReset,
   isUsernameAvailable,
   verifyEmail,
   resetPassword,
