@@ -7,110 +7,28 @@ import {
   Badge,
   Button,
 } from "@/components";
-import { Star, MapPin, Bookmark } from "lucide-react";
-import type {
-  ErrandStatus,
-  ErrandWithClient,
-  SaveErrandMutation,
-  SaveErrandMutationVariables,
-} from "@/gql/graphql";
+import { MapPin } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useMutation } from "@apollo/client";
-import { useUserStore } from "@/store/userStore";
-import { SAVE_ERRAND_MUTATION } from "@/graphql";
+import type { ErrandSummaryItem } from "@/hooks/useErrands";
+import { useNavigate } from "react-router-dom";
 
 interface ErrandCardBlockProps {
-  errand: ErrandWithClient;
+  errand: ErrandSummaryItem;
 }
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "OPEN":
-      return "bg-green-100 text-green-800";
-    case "IN_PROGRESS":
-      return "bg-blue-100 text-blue-800";
-    case "COMPLETED":
-      return "bg-gray-100 text-gray-800";
-    case "CANCELLED":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-const renderStars = (rating: number | null | undefined) => {
-  if (!rating) return null;
-  return Array.from({ length: 5 }, (_, i) => (
-    <Star
-      key={i}
-      className={`h-4 w-4 ${
-        i < Math.floor(rating)
-          ? "fill-yellow-400 text-yellow-400"
-          : "text-gray-300"
-      }`}
-    />
-  ));
-};
-
-const formatBudget = (errand: ErrandWithClient) => {
-  if (errand.pricingType === "FIXED" && errand.price) {
-    return `₦${errand.price.toLocaleString()}`;
-  }
-  if (errand.pricingType === "HOURLY" && errand.hourlyRate) {
-    return `₦${errand.hourlyRate.toLocaleString()}/hr`;
-  }
-  return "Budget TBD";
-};
-
-const formatDistance = (distance: number | null | undefined) => {
-  if (!distance) return null;
-  const km = distance / 1000;
+const formatDistance = (distanceMeters?: number) => {
+  if (!distanceMeters) return null;
+  const km = distanceMeters / 1000;
   if (km < 1) {
-    return `${Math.round(distance)}m away`;
+    return `${Math.round(distanceMeters)}m away`;
   }
   return `${km.toFixed(1)}km away`;
 };
 
 const ErrandCardBlock: React.FC<ErrandCardBlockProps> = ({ errand }) => {
-  const [saveErrand] = useMutation<
-    SaveErrandMutation,
-    SaveErrandMutationVariables
-  >(SAVE_ERRAND_MUTATION);
-  const { user } = useUserStore();
-
-  const handleSaveErrand = async (errandId: string) => {
-    await saveErrand({
-      variables: { errandId },
-      optimisticResponse: {
-        __typename: "Mutation",
-        saveErrand: {
-          __typename: "SavedErrand",
-          id: `saved-${errandId}`,
-          errandId,
-          userId: user?.id || "",
-        },
-      },
-      update(cache) {
-        console.log(cache);
-        const errandCacheId = cache.identify({
-          __typename: "ErrandWithClient",
-          id: errandId,
-        });
-
-        if (!errandCacheId) return;
-
-        cache.modify({
-          id: errandCacheId,
-          fields: {
-            isSaved() {
-              console.log(cache);
-              return true;
-            },
-          },
-        });
-      },
-    });
-  };
+  const navigate = useNavigate();
+  const amount = (errand.budget?.amountMinorUnits || 0) / 100;
+  const currency = errand.budget?.currency === "NGN" ? "₦" : (errand.budget?.currency || "₦");
 
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer">
@@ -119,38 +37,20 @@ const ErrandCardBlock: React.FC<ErrandCardBlockProps> = ({ errand }) => {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <CardTitle className="text-lg">{errand.title}</CardTitle>
-              <Badge
-                className={getStatusColor(errand.status as ErrandStatus)}
-                variant="secondary"
-              >
-                {errand.status}
+              <Badge className="bg-green-100 text-green-800" variant="secondary">
+                OPEN
               </Badge>
-              {errand.providerType && (
-                <Badge variant="outline" className="text-xs">
-                  {errand.providerType}
-                </Badge>
-              )}
             </div>
-            <p className="text-gray-600 text-sm mb-3 line-clamp-4">
-              {errand.description}
-            </p>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-medium">
-                {errand.client?.user?.name || errand.clientName}
-              </span>
-              {errand.clientRating && (
-                <div className="flex items-center gap-1">
-                  {renderStars(errand.clientRating)}
-                  <span className="text-sm text-gray-600 ml-1">
-                    ({errand.clientRating.toFixed(1)})
-                  </span>
-                </div>
-              )}
-            </div>
+            {errand.distanceMeters && (
+              <div className="flex items-center gap-1 text-sm font-medium text-blue-600 mb-2">
+                <MapPin className="h-4 w-4" />
+                <span>{formatDistance(errand.distanceMeters)}</span>
+              </div>
+            )}
           </div>
           <div className="text-right">
             <div className="text-lg font-bold text-green-600 mb-1">
-              {formatBudget(errand)}
+              {currency}{amount.toLocaleString()}
             </div>
             <div className="text-sm text-gray-500">
               {formatDistanceToNow(new Date(errand.createdAt), {
@@ -161,41 +61,14 @@ const ErrandCardBlock: React.FC<ErrandCardBlockProps> = ({ errand }) => {
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            {errand.serviceAddress && (
-              <div className="flex items-center gap-1 max-w-xs">
-                <MapPin className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{errand.serviceAddress}</span>
-              </div>
-            )}
-            {errand.service && (
-              <Badge variant="outline" className="text-xs">
-                {errand.service.name}
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={errand.isSaved ? "default" : "outline"}
-              size="sm"
-              onClick={() => !errand.isSaved && handleSaveErrand(errand.id)}
-              disabled={errand?.isSaved || false}
-            >
-              <Bookmark
-                className={`h-4 w-4 mr-1 ${errand.isSaved ? "fill-white" : ""}`}
-              />
-              {errand.isSaved ? "Saved" : "Save"}
-            </Button>
-            <Button size="sm">Apply Now</Button>
-          </div>
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            size="sm"
+            onClick={() => navigate(`/errand/${errand.id}`)}
+          >
+            View & Apply
+          </Button>
         </div>
-        {errand.distance && (
-          <div className="mt-2 flex items-center gap-1 text-sm font-medium text-blue-600">
-            <MapPin className="h-4 w-4" />
-            <span>{formatDistance(errand.distance)}</span>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

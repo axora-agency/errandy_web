@@ -16,10 +16,8 @@ import { useErrands } from "@/hooks/useErrands";
 import HeaderBlock from "./blocks/HeaderBlock";
 import SearchBlock from "./blocks/SearchBlock";
 import ErrandCardBlock from "./blocks/ErrandCardBlock";
-import { ErrandType } from "@/gql/graphql";
-
 const FindWorkPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ErrandType>(ErrandType.Feed);
+  const [activeTab, setActiveTab] = useState<string>("FEED");
   const [searchKeyword, setSearchKeyword] = useState("");
 
   // Use the GraphQL hook for real data
@@ -27,12 +25,10 @@ const FindWorkPage: React.FC = () => {
     errands: realErrands,
     loading,
     error,
-    total,
     page,
     totalPages,
     hasNextPage,
     hasPreviousPage,
-    loadMore,
     changeTab,
     searchErrands,
     refresh,
@@ -43,7 +39,7 @@ const FindWorkPage: React.FC = () => {
     enableSubscriptions: true,
   });
 
-  const handleTabChange = (value: ErrandType) => {
+  const handleTabChange = (value: string) => {
     setActiveTab(value);
     setSearchKeyword(""); // Clear search when switching tabs
     changeTab(value);
@@ -142,36 +138,36 @@ const FindWorkPage: React.FC = () => {
       <SearchBlock searchKeyword={searchKeyword} onSearch={handleSearch} />
       <Tabs
         value={activeTab}
-        onValueChange={(value) => setActiveTab(value as ErrandType)}
+        onValueChange={(value) => handleTabChange(value)}
         className="w-full"
       >
         <TabsList className="bg-transparent border-b border-gray-100 rounded-none h-auto p-0 justify-start w-full">
           <TabsTrigger
-            value={ErrandType.Feed}
+            value="FEED"
             className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:text-blue-600 data-[state=active]:shadow-[0_2px_0_0_theme(colors.blue.500)] rounded-none border-b-2 border-transparent px-4 py-3 font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
             Feed
           </TabsTrigger>
           <TabsTrigger
-            value={ErrandType.BestMatch}
+            value="BEST_MATCH"
             className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:text-blue-600 data-[state=active]:shadow-[0_2px_0_0_theme(colors.blue.500)] rounded-none border-b-2 border-transparent px-4 py-3 font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
             Best Matches
           </TabsTrigger>
           <TabsTrigger
-            value={ErrandType.MostRecent}
+            value="MOST_RECENT"
             className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:text-blue-600 data-[state=active]:shadow-[0_2px_0_0_theme(colors.blue.500)] rounded-none border-b-2 border-transparent px-4 py-3 font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
             Most Recent
           </TabsTrigger>
           <TabsTrigger
-            value={ErrandType.Saved}
+            value="SAVED"
             className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:text-blue-600 data-[state=active]:shadow-[0_2px_0_0_theme(colors.blue.500)] rounded-none border-b-2 border-transparent px-4 py-3 font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
             Saved Errands
           </TabsTrigger>
         </TabsList>
-        <TabsContent value={ErrandType.Feed} className="space-y-4 mt-4">
+        <TabsContent value="FEED" className="space-y-4 mt-4">
           {loading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Loading errands...</p>
@@ -200,7 +196,7 @@ const FindWorkPage: React.FC = () => {
             </div>
           )}
         </TabsContent>
-        <TabsContent value={ErrandType.BestMatch} className="space-y-4 mt-4">
+        <TabsContent value="BEST_MATCH" className="space-y-4 mt-4">
           {loading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Finding best matches...</p>
@@ -230,7 +226,7 @@ const FindWorkPage: React.FC = () => {
             </div>
           )}
         </TabsContent>
-        <TabsContent value={ErrandType.MostRecent} className="space-y-4 mt-4">
+        <TabsContent value="MOST_RECENT" className="space-y-4 mt-4">
           {loading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Loading recent errands...</p>
@@ -259,7 +255,7 @@ const FindWorkPage: React.FC = () => {
             </div>
           )}
         </TabsContent>
-        <TabsContent value={ErrandType.Saved} className="space-y-4 mt-4">
+        <TabsContent value="SAVED" className="space-y-4 mt-4">
           {loading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Loading saved errands...</p>
