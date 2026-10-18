@@ -150,11 +150,6 @@ export const link = split(
 );
 
 export const client = new ApolloClient({
-  uri: `${VITE_API_URL}/graphql`,
   cache: new InMemoryCache({}),
-  credentials: "include",
-  headers: {
-    "Content-Type": "application/json",
-  },
   link: link,
 });

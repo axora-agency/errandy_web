@@ -75,6 +75,7 @@ export default function SignUpPage() {
     try {
       await auth.signIn.social({
         provider,
+        callbackURL: window.location.origin,
       });
     } catch (error) {
       toast.error(

@@ -15,17 +15,21 @@ const RequireAuth = () => {
   const { setUser } = useUserStore();
   console.log(session, "User sessions")
 
-  const { data, loading } = useQuery<UserQuery, UserQueryVariables>(
+  const { data, loading, error } = useQuery<UserQuery, UserQueryVariables>(
     GET_USER,
     {
       skip: !Boolean(session?.session && session.user?.id),
-      onError: (error) => {
-        const errors = extractGraphQLErrors(error);
-        console.log(errors);
-        toast.error(errors[0]?.message);
-      },
     }
   );
+
+
+  useEffect(() => {
+    if (error) {
+      const errors = extractGraphQLErrors(error);
+      console.log(errors);
+      toast.error(errors[0]?.message);
+    }
+  }, [error]);
 
   useEffect(() => {
     if (!loading && data?.user) {
